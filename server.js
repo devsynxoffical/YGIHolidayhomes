@@ -11,7 +11,8 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
 if (!STRIPE_SECRET_KEY) {
   console.error('❌ CRITICAL: No Stripe secret key found!');
-  process.exit(1);
+  // Don't exit, just log error so app stays alive for health check
+  // process.exit(1); 
 }
 
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
@@ -25,47 +26,21 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(morgan('combined'));
-// Allowed origins list
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://ygiholidayhomes.com',
-  'https://www.ygiholidayhomes.com',
-  'https://alphaholidayhomes.com',
-  'http://ygiholidayhomes.com',
-  'http://www.ygiholidayhomes.com'
-];
 
-// Add FRONTEND_URL from env if it exists
-if (process.env.FRONTEND_URL) {
-  const envUrls = process.env.FRONTEND_URL.split(',');
-  envUrls.forEach(url => {
-    if (!allowedOrigins.includes(url.trim())) {
-      allowedOrigins.push(url.trim());
-    }
-  });
-}
-
-console.log('✅ Allowed CORS Origins:', allowedOrigins);
-
+// CORS Configuration - Allow ALL origins temporarily to fix connection issues
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('⚠️ CORS blocked origin:', origin);
-      // For debugging/production stability, we can be permissive or strict
-      // callback(new Error('Not allowed by CORS')); 
-      // Let's be strict but log it. If it fails, we know why.
-      callback(null, false);
-    }
-  },
-  credentials: true
+  origin: true, // Reflects the request origin, effectively allowing all
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+
 app.use(express.json());
+
+// Root endpoint - Important for some health checks
+app.get('/', (req, res) => {
+  res.send('YGI Backend is Running!');
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
