@@ -25,16 +25,44 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(helmet());
 app.use(morgan('combined'));
+// Allowed origins list
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://ygiholidayhomes.com',
+  'https://www.ygiholidayhomes.com',
+  'https://alphaholidayhomes.com',
+  'http://ygiholidayhomes.com',
+  'http://www.ygiholidayhomes.com'
+];
+
+// Add FRONTEND_URL from env if it exists
+if (process.env.FRONTEND_URL) {
+  const envUrls = process.env.FRONTEND_URL.split(',');
+  envUrls.forEach(url => {
+    if (!allowedOrigins.includes(url.trim())) {
+      allowedOrigins.push(url.trim());
+    }
+  });
+}
+
+console.log('✅ Allowed CORS Origins:', allowedOrigins);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://ygiholidayhomes.com',
-    'https://www.ygiholidayhomes.com',
-    'https://alphaholidayhomes.com',
-    'http://ygiholidayhomes.com',
-    'http://www.ygiholidayhomes.com'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('⚠️ CORS blocked origin:', origin);
+      // For debugging/production stability, we can be permissive or strict
+      // callback(new Error('Not allowed by CORS')); 
+      // Let's be strict but log it. If it fails, we know why.
+      callback(null, false);
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
