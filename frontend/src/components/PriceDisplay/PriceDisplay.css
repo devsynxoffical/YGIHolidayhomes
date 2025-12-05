@@ -1,0 +1,93 @@
+/* Price Display Component */
+.price-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+  line-height: 1.2;
+}
+
+.price-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.125rem;
+}
+
+.price-period {
+  font-size: 0.875em;
+  font-weight: 400;
+  color: var(--muted, #6b7280);
+  margin-left: 0.125rem;
+}
+
+.price-conversion {
+  display: block;
+  margin-top: 0.125rem;
+}
+
+.conversion-note {
+  font-size: 0.75em;
+  font-weight: 400;
+  color: var(--muted, #9ca3af);
+  font-style: italic;
+}
+
+/* Size variants */
+.price-small {
+  font-size: 0.875rem;
+}
+
+.price-small .price-period {
+  font-size: 0.75em;
+}
+
+.price-medium {
+  font-size: 1rem;
+}
+
+.price-large {
+  font-size: 1.25rem;
+}
+
+.price-large .price-period {
+  font-size: 0.875em;
+}
+
+.price-xl {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.price-xl .price-period {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Color variants */
+.price-primary {
+  color: var(--primary, #0FA968);
+}
+
+.price-success {
+  color: var(--success, #10b981);
+}
+
+.price-warning {
+  color: var(--warning, #f59e0b);
+}
+
+.price-error {
+  color: var(--error, #ef4444);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .price-xl {
+    font-size: 1.25rem;
+  }
+  
+  .price-large {
+    font-size: 1.125rem;
+  }
+}

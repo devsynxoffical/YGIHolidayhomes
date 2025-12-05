@@ -1,0 +1,233 @@
+/* Reset margins and ensure hero starts from absolute top */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  max-height: 800px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('/Images/hero1.avif');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  z-index: 1;
+  margin-top: -70px;
+  padding-top: 70px;
+}
+
+/* Ensure hero starts from absolute top on home page */
+.home-page .hero {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.hero-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  background: linear-gradient(270deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0) 60%);
+}
+
+.hero-content {
+  position: absolute;
+  right: 2rem;
+  bottom: 2rem;
+  text-align: right;
+  max-width: 600px;
+  color: #fff;
+  animation: fadeUp 0.5s ease-out 0.2s both;
+  z-index: 3;
+}
+
+.hero-text {
+  color: #fff;
+}
+
+.hero-eyebrow {
+  margin-bottom: var(--space-4);
+  opacity: 0.9;
+}
+
+.hero-eyebrow .small {
+  color: #fff;
+  font-weight: 500;
+}
+
+.hero-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 1.1;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  color: #fff;
+  word-wrap: break-word;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.hero-title div {
+  margin: 0;
+  padding: 0;
+  text-align: right;
+}
+
+.highlight {
+  font-weight: 600;
+  text-align: right;
+}
+
+.hero-sub {
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.9;
+  margin: 0 0 22px;
+  color: #fff;
+  text-align: right;
+}
+
+.hero-btn-container {
+  text-align: right;
+  margin-top: 0;
+}
+
+.hero-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #0FA968;
+  background: linear-gradient(135deg, #0FA968 0%, #0AA38A 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.hero-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(15, 169, 104, 0.3);
+}
+
+/* Animation Classes */
+.hero-image {
+  opacity: 0;
+  animation: fadeIn var(--transition-slow) ease forwards;
+}
+
+@keyframes fadeUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(12px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+  .hero {
+    min-height: 500px;
+    max-height: 600px;
+  }
+  
+  .hero-content {
+    right: 1.5rem;
+    bottom: 1.5rem;
+    max-width: 500px;
+  }
+  
+  .hero-title {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    height: 100vh;
+    min-height: 400px;
+    margin-top: -70px;
+    padding-top: 70px;
+  }
+  
+  .hero-content {
+    right: 1rem;
+    bottom: 1rem;
+    text-align: right;
+    max-width: 90%;
+  }
+  
+  .hero-title {
+    font-size: 24px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  
+  .hero-sub {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+  }
+  
+  .hero-btn {
+    padding: 10px 22px;
+    font-size: 13px;
+  }
+}
+
+/* Tablet specific adjustments */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .hero {
+    margin-top: -70px;
+    padding-top: 70px;
+  }
+  
+  .hero-content {
+    right: 1.5rem;
+    bottom: 1.5rem;
+    max-width: 450px;
+  }
+  
+  .hero-title {
+    font-size: 32px;
+  }
+}

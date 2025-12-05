@@ -1,0 +1,634 @@
+/* Main Header */
+.header {
+  background: transparent;
+  border-bottom: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 70px; /* Fixed height to prevent shifting */
+  transition: all var(--transition-normal);
+  transform: translateY(0);
+}
+
+.header.hidden {
+  transform: translateY(-100%);
+}
+
+.header.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Solid header for non-home pages */
+.header.solid {
+  background: var(--bg);
+  border-bottom: 1px solid var(--divider);
+}
+
+/* Transparent header for About Us page */
+.header.transparent {
+  background: transparent;
+  border-bottom: none;
+}
+
+.header.transparent .nav-link {
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.header.transparent .nav-link:hover {
+  color: #FFD700;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.header.transparent .nav-link.active {
+  color: #FFD700;
+  background: rgba(255, 215, 0, 0.2);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.header.transparent .currency-select {
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.header.transparent .currency-select option {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.header.transparent .logo-link {
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.header.transparent .language-selector {
+  z-index: 1005;
+}
+
+.header.transparent .language-selector .language-select {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.header.transparent .language-selector .language-select:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.header.solid .nav-link {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.header.solid .nav-link:hover {
+  color: #0FA968;
+}
+
+.header.solid .nav-link.active {
+  color: #0FA968;
+  background: rgba(15, 169, 104, 0.1);
+}
+
+.header.solid .currency-select {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.header.solid .utility-btn {
+  color: var(--text);
+}
+
+.header.solid .utility-btn:hover {
+  background: var(--divider);
+}
+
+.header.solid .hamburger span {
+  background: var(--text);
+  box-shadow: none;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  position: relative;
+  z-index: 1001;
+}
+
+/* Logo */
+.logo {
+  flex-shrink: 0;
+  margin-left: 40px; /* Shift logo slightly right for better spacing */
+  margin-right: 0; /* Remove excessive right margin */
+}
+
+.logo-link {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo-image {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Navigation */
+.nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px; /* Better spacing between buttons */
+}
+
+.nav-list {
+  display: flex;
+  list-style: none;
+  gap: 30px; /* Consistent spacing with nav container */
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  transition: all var(--transition-fast);
+  position: relative;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+  color: #0FA968;
+}
+
+/* Consistent hover effect for Rent a Property in navigation */
+.nav-link.rent-property-btn:hover {
+  color: #0FA968;
+  text-decoration: underline;
+}
+
+.nav-link.active {
+  color: #0FA968;
+  background: rgba(15, 169, 104, 0.2);
+  border-radius: 6px;
+  text-shadow: none;
+}
+
+.header.scrolled .nav-link {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.header.scrolled .nav-link:hover {
+  color: #0FA968;
+}
+
+.header.scrolled .nav-link.active {
+  color: #0FA968;
+  background: rgba(15, 169, 104, 0.1);
+}
+
+/* Header Utilities */
+.header-utilities {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Increased gap for better spacing between selectors */
+  flex-shrink: 0;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 1001;
+  overflow: visible;
+}
+
+.utility-item {
+  display: flex;
+  align-items: center;
+}
+
+.utility-item.currency-dropdown {
+  position: relative;
+  overflow: visible;
+  /* Prevent layout shifts when dropdown opens */
+  contain: none;
+  z-index: 1002;
+}
+
+/* Language Selector - Styles handled by GoogleTranslate component */
+.language-selector {
+  position: relative;
+  z-index: 1005;
+  opacity: 1;
+  visibility: visible;
+  display: flex;
+  align-items: center;
+}
+
+/* Ensure language selector is always visible in all header states */
+.language-selector * {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Currency Dropdown - Remove conflicting styles */
+/* .currency-dropdown {
+  position: relative;
+} */
+
+.currency-select {
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.currency-select:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.currency-select:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.currency-arrow {
+  transition: transform var(--transition-fast);
+}
+
+.currency-arrow.open {
+  transform: rotate(180deg);
+}
+
+.header.scrolled .currency-select {
+  color: var(--text);
+  text-shadow: none;
+}
+
+.header.scrolled .currency-select:hover {
+  background: var(--divider);
+}
+
+/* Currency Menu - High z-index to prevent clipping - REMOVED TO AVOID CONFLICTS */
+/* .currency-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  overflow: hidden;
+  margin-top: 4px;
+  min-width: 120px;
+} */
+
+/* REMOVED CONFLICTING CURRENCY STYLES - USING CURRENCYSELECTOR COMPONENT STYLES */
+/* .currency-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.currency-option:hover {
+  background: var(--divider);
+}
+
+.currency-option.selected {
+  background: rgba(15, 169, 104, 0.1);
+  color: #0FA968;
+  font-weight: 500;
+}
+
+.currency-symbol {
+  font-weight: 600;
+  min-width: 20px;
+}
+
+.currency-label {
+  flex: 1;
+} */
+
+.utility-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  text-decoration: none;
+}
+
+.utility-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.header.scrolled .utility-btn {
+  color: var(--text);
+}
+
+.header.scrolled .utility-btn:hover {
+  background: var(--divider);
+}
+
+/* Ensure language selector is always visible when scrolled */
+.header.scrolled .language-selector {
+  z-index: 1005;
+  opacity: 1;
+  visibility: visible;
+}
+
+.header.scrolled .language-selector .language-select {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+  visibility: visible;
+}
+
+.cart-btn {
+  position: relative;
+}
+
+.cart-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #0FA968;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 24px;
+  height: 18px;
+}
+
+.hamburger span {
+  width: 100%;
+  height: 2px;
+  background: white;
+  transition: all var(--transition-fast);
+  transform-origin: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.header.scrolled .hamburger span {
+  background: var(--text);
+  box-shadow: none;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--divider);
+  box-shadow: var(--shadow-subtle);
+  z-index: 1003;
+}
+
+.mobile-menu-content {
+  padding: var(--space-6) 0;
+}
+
+.mobile-nav-list {
+  list-style: none;
+}
+
+.mobile-nav-item {
+  border-bottom: 1px solid var(--divider);
+}
+
+.mobile-nav-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-nav-link {
+  display: block;
+  padding: var(--space-4) var(--gutter-mobile);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 16px;
+  transition: all var(--transition-fast);
+}
+
+.mobile-nav-link:hover {
+  background: var(--divider);
+}
+
+.mobile-nav-link.active {
+  color: #0FA968;
+  background: rgba(15, 169, 104, 0.1);
+}
+
+/* Mobile Currency Section */
+.mobile-currency-section {
+  padding: var(--space-4);
+  border-top: 1px solid var(--divider);
+  background: var(--bg-light);
+}
+
+.mobile-currency-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: var(--space-2);
+}
+
+/* Search Overlay */
+.search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  z-index: 1004;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 120px;
+}
+
+.search-content {
+  width: 100%;
+  max-width: 600px;
+  padding: 0 var(--gutter-desktop);
+}
+
+.search-close {
+  position: absolute;
+  top: var(--space-6);
+  right: var(--gutter-desktop);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  padding: var(--space-2);
+}
+
+.search-input-container {
+  margin-bottom: var(--space-8);
+}
+
+.search-input {
+  width: 100%;
+  font-size: 24px;
+  padding: var(--space-4) 0;
+  border: none;
+  border-bottom: 2px solid var(--text);
+  background: transparent;
+  color: var(--text);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--muted);
+}
+
+.search-results {
+  min-height: 200px;
+}
+
+.search-placeholder {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+  .nav {
+    display: none;
+  }
+  
+  .mobile-menu-btn {
+    display: block;
+  }
+  
+  .header-utilities {
+    gap: var(--space-2);
+  }
+  
+  .utility-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .logo-image {
+    height: 54px;
+  }
+  
+  /* Adjust language selector for tablet */
+  .language-select {
+    font-size: 13px;
+    min-width: 100px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .header {
+    height: 72px;
+  }
+  
+  .logo-image {
+    height: 48px;
+  }
+  
+  .header-utilities {
+    gap: var(--space-1);
+  }
+  
+  .utility-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .search-content {
+    padding: 0 var(--gutter-mobile);
+  }
+  
+  .search-close {
+    right: var(--gutter-mobile);
+  }
+  
+  .search-input {
+    font-size: 20px;
+  }
+  
+  /* Adjust language selector for mobile */
+  .language-select {
+    font-size: 12px;
+    min-width: 80px;
+    padding-right: 20px;
+  }
+}

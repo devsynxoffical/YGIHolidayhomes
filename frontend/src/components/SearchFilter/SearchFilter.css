@@ -1,0 +1,167 @@
+/* Layout & title */
+.search-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+.search-title {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 700;
+  text-align: center;
+  margin: 24px 0 24px;
+  line-height: 1.15;
+}
+
+/* Quick Search Tags */
+.quick-search-tags {
+  text-align: center;
+  margin: 32px 0;
+  padding: 24px;
+  background: rgba(15, 169, 104, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(15, 169, 104, 0.1);
+}
+
+.quick-search-tags h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text, #111827);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.quick-tag {
+  background: rgba(15, 169, 104, 0.1);
+  color: #0FA968;
+  border: 1px solid rgba(15, 169, 104, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.quick-tag:hover {
+  background: #0FA968;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 169, 104, 0.3);
+}
+
+@media (max-width: 768px) {
+  .tag-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .quick-tag {
+    width: 100%;
+    max-width: 200px;
+    text-align: center;
+  }
+}
+
+/* Card container */
+.search-card {
+  background: #f7f9fb;
+  border: 1px solid #e5e9f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(20, 40, 60, 0.06);
+}
+
+/* Grid */
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  align-items: center; /* centers all elements vertically */
+}
+
+/* Each field takes 4 columns on desktop, 6 on tablet, 12 on mobile */
+.field {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+@media (max-width: 992px) {
+  .field { grid-column: span 6; }
+}
+@media (max-width: 600px) {
+  .field { grid-column: span 12; }
+}
+
+/* Labels */
+.field > label {
+  font-size: 12px;
+  color: #5b6470;
+  font-weight: 600;
+}
+
+/* Inputs / selects: consistent height & look */
+.field select,
+.field input[type="text"],
+.field input[type="number"] {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #d7dde5;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 15px;
+  color: #111827;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.field select:focus,
+.field input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* Button: normal size, aligned bottom-right */
+.actions {
+  grid-column: 10 / -1; /* rightmost on desktop */
+  display: flex;
+  justify-content: flex-end;
+}
+@media (max-width: 992px) {
+  .actions { grid-column: span 12; justify-content: stretch; }
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, #0FA968 0%, #0AA38A 100%);
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 30px rgba(15, 169, 104, 0.3); 
+}
+
+/* Make the button full-width on mobile for easy tapping */
+@media (max-width: 600px) {
+  .btn-primary { width: 100%; }
+}

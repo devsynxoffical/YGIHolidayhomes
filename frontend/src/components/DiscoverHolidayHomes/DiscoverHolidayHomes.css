@@ -1,0 +1,326 @@
+/* Discover Holiday Homes Section */
+.discover-holiday-homes {
+  background: white;
+  padding: 60px 0;
+  position: relative;
+}
+
+.discover-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+/* Text Content */
+.discover-text {
+  padding-right: 20px;
+}
+
+.discover-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-h1);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: var(--line-height-h1);
+}
+
+.discover-subtitle {
+  font-family: var(--font-family);
+  font-size: var(--font-size-h2);
+  font-weight: 600;
+  color: #0FA968;
+  margin-bottom: 8px;
+  line-height: var(--line-height-h2);
+}
+
+.discover-description {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  font-weight: 400;
+  color: var(--muted);
+  margin-bottom: 24px;
+  line-height: var(--line-height-body);
+}
+
+.discover-main-text {
+  margin-bottom: 24px;
+}
+
+.discover-main-text p {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  color: var(--text);
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+/* Features List */
+.discover-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.feature-icon {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #0FA968 0%, #0AA38A 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.feature-text {
+  font-family: var(--font-family);
+  font-size: var(--font-size-body);
+  color: var(--text);
+  font-weight: 500;
+  line-height: var(--line-height-body);
+}
+
+/* Video Section */
+.discover-video {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.discover-video-element {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.discover-video:hover .discover-video-element {
+  transform: scale(1.05);
+}
+
+.video-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 40px 30px 30px;
+  color: white;
+}
+
+/* Keep image styles for backward compatibility */
+.discover-image {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.discover-img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.discover-image:hover .discover-img {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 40px 30px 30px;
+  color: white;
+}
+
+.overlay-content h4 {
+  font-family: var(--font-family);
+  font-size: var(--font-size-h2);
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.overlay-content p {
+  font-family: var(--font-family);
+  font-size: var(--font-size-small);
+  opacity: 0.9;
+  margin: 0;
+  line-height: var(--line-height-small);
+}
+
+/* Animations */
+.discover-text {
+  animation: fadeInLeft 0.8s ease-out;
+}
+
+.discover-video,
+.discover-image {
+  animation: fadeInRight 0.8s ease-out;
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+  .discover-content {
+    gap: 30px;
+  }
+  
+  .discover-title {
+    font-size: 32px;
+  }
+  
+  .discover-subtitle {
+    font-size: 18px;
+  }
+  
+  .discover-description {
+    font-size: 16px;
+  }
+  
+  .discover-video-element,
+  .discover-img {
+    height: 450px;
+  }
+}
+
+@media (max-width: 767px) {
+  .discover-holiday-homes {
+    padding: 40px 0;
+  }
+  
+  .discover-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .discover-text {
+    padding-right: 0;
+    order: 2;
+  }
+  
+  .discover-video,
+  .discover-image {
+    order: 1;
+  }
+  
+  .discover-title {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+  
+  .discover-subtitle {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  
+  .discover-description {
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .discover-main-text {
+    margin-bottom: 20px;
+  }
+  
+  .discover-main-text p {
+    font-size: 15px;
+  }
+  
+  .discover-video-element,
+  .discover-img {
+    height: 300px;
+  }
+  
+  .video-overlay,
+  .image-overlay {
+    padding: 30px 20px 20px;
+  }
+  
+  .overlay-content h4 {
+    font-size: 18px;
+  }
+  
+  .overlay-content p {
+    font-size: 13px;
+  }
+  
+  .feature-item {
+    padding: 10px 0;
+  }
+  
+  .feature-text {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .discover-holiday-homes {
+    padding: 30px 0;
+  }
+  
+  .discover-content {
+    gap: 20px;
+  }
+  
+  .discover-title {
+    font-size: 24px;
+  }
+  
+  .discover-subtitle {
+    font-size: 15px;
+  }
+  
+  .discover-description {
+    font-size: 14px;
+  }
+  
+  .discover-main-text p {
+    font-size: 14px;
+  }
+  
+  .discover-video-element,
+  .discover-img {
+    height: 250px;
+  }
+  
+  .feature-text {
+    font-size: 14px;
+  }
+}

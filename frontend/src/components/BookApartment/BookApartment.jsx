@@ -1,0 +1,980 @@
+import React, { useState, useEffect } from 'react';
+import PriceDisplay from '../PriceDisplay/PriceDisplay';
+import DiscountBanner from '../DiscountBanner/DiscountBanner';
+import { validateCoupon, calculateDiscount, getActiveCoupons } from '../../utils/couponSystem';
+import { properties as realProperties } from '../../data/properties';
+import './BookApartment.css';
+
+const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) => {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [videoError, setVideoError] = useState(false);
+
+  // Calculator form state
+  const [calculatorForm, setCalculatorForm] = useState({
+    destination: '',
+    checkIn: '',
+    checkOut: '',
+    guests: 1
+  });
+  const [searchResults, setSearchResults] = useState(null);
+
+  // Initial load - always load all properties first
+  useEffect(() => {
+    setProperties(realProperties);
+    setLoading(false);
+  }, []);
+
+  // Handle search parameters when they change
+  useEffect(() => {
+    if (searchParams && Object.keys(searchParams).length > 0) {
+      applySearchFilters(searchParams);
+    } else {
+      // Reset to all properties if no search params
+      setProperties(realProperties);
+      setSearchResults(null);
+    }
+  }, [searchParams]);
+
+  // Apply search filters from SearchFilter component
+  const applySearchFilters = (filters) => {
+    let filteredProperties = [...realProperties];
+
+    // Filter by property type
+    if (filters.propertyType && filters.propertyType !== 'All Types') {
+      filteredProperties = filteredProperties.filter(property =>
+        property.title.toLowerCase().includes(filters.propertyType.toLowerCase()) ||
+        filters.propertyType.toLowerCase() === 'apartment' // All our properties are apartments
+      );
+    }
+
+    // Filter by city/location
+    if (filters.city && filters.city !== 'All Cities') {
+      filteredProperties = filteredProperties.filter(property =>
+        property.area.toLowerCase().includes(filters.city.toLowerCase()) ||
+        property.location.toLowerCase().includes(filters.city.toLowerCase()) ||
+        property.title.toLowerCase().includes(filters.city.toLowerCase())
+      );
+    }
+
+    // Filter by bedrooms
+    if (filters.bedrooms && filters.bedrooms !== 'Any Bedrooms') {
+      const bedroomCount = parseInt(filters.bedrooms);
+      filteredProperties = filteredProperties.filter(property =>
+        property.bedrooms >= bedroomCount
+      );
+    }
+
+    // Filter by bathrooms
+    if (filters.bathrooms && filters.bathrooms !== 'Any Bathrooms') {
+      const bathroomCount = parseInt(filters.bathrooms);
+      filteredProperties = filteredProperties.filter(property =>
+        property.bathrooms >= bathroomCount
+      );
+    }
+
+    // Filter by price range
+    if (filters.minPrice && filters.minPrice !== 'Min Price') {
+      const minPrice = parseInt(filters.minPrice);
+      filteredProperties = filteredProperties.filter(property =>
+        property.price >= minPrice
+      );
+    }
+
+    if (filters.maxPrice && filters.maxPrice !== 'Max Price') {
+      const maxPrice = parseInt(filters.maxPrice);
+      filteredProperties = filteredProperties.filter(property =>
+        property.price <= maxPrice
+      );
+    }
+
+    // Update properties with filtered results
+    setProperties(filteredProperties);
+
+    // Set search results summary
+    setSearchResults({
+      destination: filters.city || 'All areas',
+      checkIn: '',
+      checkOut: '',
+      guests: 1,
+      nights: 1,
+      totalResults: filteredProperties.length,
+      averagePrice: filteredProperties.length > 0
+        ? Math.round(filteredProperties.reduce((sum, prop) => sum + prop.price, 0) / filteredProperties.length)
+        : 0
+    });
+
+    // Scroll to properties section
+    setTimeout(() => {
+      const propertiesSection = document.querySelector('.properties-section');
+      if (propertiesSection) {
+        propertiesSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
+  const handleBookNow = (property) => {
+    // Show booking modal to collect details first
+    setSelectedProperty(property);
+    setShowBookingModal(true);
+  };
+
+  const handleViewDetails = (property) => {
+    // Navigate to property details page when property is clicked
+    if (onNavigate) {
+      onNavigate('property-details', property);
+    }
+  };
+
+  const handleBookingSubmit = async (bookingData) => {
+    try {
+      // Create booking data for payment page
+      const paymentBookingData = {
+        ...selectedProperty,
+        bookingData: {
+          checkIn: bookingData.checkIn,
+          checkOut: bookingData.checkOut,
+          guests: bookingData.guests,
+          name: bookingData.name,
+          email: bookingData.email,
+          phone: bookingData.phone
+        },
+        totalPrice: bookingData.totalPrice
+      };
+
+      // Close modal and navigate to payment page
+      setShowBookingModal(false);
+      setSelectedProperty(null);
+
+      // Pass booking data to parent component for payment
+      if (onBookNow) {
+        onBookNow(paymentBookingData);
+      }
+    } catch (error) {
+      console.error('Booking submission error:', error);
+      alert('❌ An error occurred. Please try again.');
+    }
+  };
+
+  // Calculator form handlers
+  const handleCalculatorInputChange = (field, value) => {
+    setCalculatorForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Smart search function that finds properties with flexible matching
+  const smartPropertySearch = (searchTerm, property) => {
+    if (!searchTerm) return true;
+
+    const search = searchTerm.toLowerCase().trim();
+    const searchWords = search.split(/\s+/);
+
+    // Create a comprehensive search string from all property fields
+    const searchableText = [
+      property.title,
+      property.area,
+      property.location,
+      property.highlights?.join(' '),
+      property.slug,
+      property.dtcm
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    // Check for exact phrase match (highest priority)
+    if (searchableText.includes(search)) {
+      return { match: true, score: 100 };
+    }
+
+    // Check for individual word matches
+    let matchScore = 0;
+    let matchedWords = 0;
+
+    searchWords.forEach(word => {
+      if (word.length > 2) { // Only consider words longer than 2 characters
+        if (searchableText.includes(word)) {
+          matchScore += 20;
+          matchedWords++;
+        }
+      }
+    });
+
+    // Partial word matching for longer search terms
+    if (search.length > 3) {
+      searchWords.forEach(word => {
+        if (word.length > 3) {
+          // Check if any word in the property text contains this search word
+          const propertyWords = searchableText.split(/\s+/);
+          propertyWords.forEach(propWord => {
+            if (propWord.includes(word) || word.includes(propWord)) {
+              matchScore += 10;
+            }
+          });
+        }
+      });
+    }
+
+    // Special keyword mappings for common search terms
+    const keywordMappings = {
+      'urban': ['modern', 'retreat', 'oasis', 'downtown', 'city'],
+      'oasis': ['retreat', 'urban', 'modern', 'luxury'],
+      'marina': ['princess', 'dorra', 'bay', 'waterfront'],
+      'princess': ['tower', 'marina', 'dubai'],
+      'downtown': ['burj', 'khalifa', 'dubai mall', 'standpoint'],
+      'palm': ['jumeirah', 'marina', 'residence'],
+      'bright': ['spacious', 'comfy', 'modern'],
+      'family': ['friendly', 'kids', 'play'],
+      'luxury': ['elegant', 'premium', 'upscale'],
+      'beach': ['waterfront', 'jbr', 'coastal'],
+      'pool': ['swimming', 'infinity', 'outdoor'],
+      'modern': ['contemporary', 'sleek', 'urban']
+    };
+
+    // Check keyword mappings
+    Object.entries(keywordMappings).forEach(([keyword, synonyms]) => {
+      if (search.includes(keyword)) {
+        synonyms.forEach(synonym => {
+          if (searchableText.includes(synonym)) {
+            matchScore += 15;
+          }
+        });
+      }
+    });
+
+    // Return match if we found any matches
+    return { match: matchScore > 0, score: matchScore };
+  };
+
+  const handleCalculatorSearch = () => {
+    // Validate form
+    if (!calculatorForm.destination || !calculatorForm.checkIn || !calculatorForm.checkOut) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // Check if check-out is after check-in
+    const checkInDate = new Date(calculatorForm.checkIn);
+    const checkOutDate = new Date(calculatorForm.checkOut);
+
+    if (checkOutDate <= checkInDate) {
+      alert('Check-out date must be after check-in date');
+      return;
+    }
+
+    // Use smart search to filter properties
+    const searchResults = realProperties.map(property => ({
+      property,
+      searchResult: smartPropertySearch(calculatorForm.destination, property)
+    }))
+      .filter(result => result.searchResult.match)
+      .sort((a, b) => b.searchResult.score - a.searchResult.score) // Sort by relevance
+      .map(result => result.property);
+
+    // Update properties list with filtered results
+    setProperties(searchResults);
+
+    // Calculate search results summary
+    const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    const totalResults = searchResults.length;
+    const averagePrice = searchResults.length > 0
+      ? Math.round(searchResults.reduce((sum, prop) => sum + prop.price, 0) / searchResults.length)
+      : 0;
+
+    setSearchResults({
+      destination: calculatorForm.destination,
+      checkIn: calculatorForm.checkIn,
+      checkOut: calculatorForm.checkOut,
+      guests: calculatorForm.guests,
+      nights,
+      totalResults,
+      averagePrice
+    });
+
+    // Scroll to properties section
+    const propertiesSection = document.querySelector('.properties-section');
+    if (propertiesSection) {
+      propertiesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    console.log('Smart search completed:', {
+      searchTerm: calculatorForm.destination,
+      resultsFound: totalResults,
+      searchResults: searchResults.map(p => p.title)
+    });
+  };
+
+  const handleClearFilters = () => {
+    setCalculatorForm({
+      destination: '',
+      checkIn: '',
+      checkOut: '',
+      guests: 1
+    });
+
+    // Reset to all properties
+    setProperties(realProperties);
+    setSearchResults(null);
+  };
+
+  return (
+    <div className="book-apartment">
+      {/* Hero Video Section */}
+      <div className="hero-video-section">
+        <div className="video-container">
+          {!videoError ? (
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="hero-video"
+              onError={(e) => {
+                console.error('Video failed to load:', e.target.src);
+                setVideoError(true);
+              }}
+              onLoadStart={() => console.log('Video loading started')}
+              onCanPlay={() => console.log('Video can play')}
+            >
+              <source src="/Images/IMG_1646.MP4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <div className="video-fallback">
+              <div className="fallback-bg"></div>
+              <p style={{ color: 'white', textAlign: 'center', padding: '2rem' }}>
+                Video unavailable - showing background
+              </p>
+            </div>
+          )}
+          <div className="video-overlay">
+            <div className="video-content">
+              <h1>Discover Your Perfect Stay</h1>
+              <p>Experience luxury accommodations in Dubai</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Calculator Section */}
+      <div className="calculator-section">
+        <div className="container">
+          <div className="calculator-form">
+            <h2>Calculate Your Stay</h2>
+            <div className="calculator-fields">
+              <div className="calc-field">
+                <label>Destination/Area</label>
+                <input
+                  type="text"
+                  placeholder="Where to in Dubai?"
+                  value={calculatorForm.destination}
+                  onChange={(e) => handleCalculatorInputChange('destination', e.target.value)}
+                  list="destination-suggestions"
+                />
+                <datalist id="destination-suggestions">
+                  <option value="Dubai Marina" />
+                  <option value="Palm Jumeirah" />
+                  <option value="Downtown Dubai" />
+                  <option value="JBR Beach" />
+                  <option value="Princess Tower" />
+                  <option value="Urban Oasis" />
+                  <option value="Dorra Bay" />
+                  <option value="Marina Walk" />
+                  <option value="Burj Khalifa" />
+                  <option value="Dubai Mall" />
+                  <option value="Modern Retreat" />
+                  <option value="Family Friendly" />
+                  <option value="Luxury Apartment" />
+                  <option value="Waterfront" />
+                  <option value="Beach View" />
+                </datalist>
+              </div>
+              <div className="calc-field">
+                <label>Check-in</label>
+                <input
+                  type="date"
+                  value={calculatorForm.checkIn}
+                  onChange={(e) => handleCalculatorInputChange('checkIn', e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="calc-field">
+                <label>Check-out</label>
+                <input
+                  type="date"
+                  value={calculatorForm.checkOut}
+                  onChange={(e) => handleCalculatorInputChange('checkOut', e.target.value)}
+                  min={calculatorForm.checkIn || new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="calc-field">
+                <label>Guests</label>
+                <select
+                  value={calculatorForm.guests}
+                  onChange={(e) => handleCalculatorInputChange('guests', parseInt(e.target.value))}
+                >
+                  <option value={1}>1 Guest</option>
+                  <option value={2}>2 Guests</option>
+                  <option value={3}>3 Guests</option>
+                  <option value={4}>4 Guests</option>
+                  <option value={5}>5 Guests</option>
+                  <option value={6}>6 Guests</option>
+                </select>
+              </div>
+              <button className="calc-btn" onClick={handleCalculatorSearch}>
+                Search
+              </button>
+            </div>
+            <div className="calc-actions">
+              <button className="clear-filters-btn" onClick={handleClearFilters}>
+                Clear filters
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Results Summary */}
+      {searchResults && (
+        <div className="search-results-summary">
+          <div className="container">
+            <div className="results-info">
+              <h3>Search Results</h3>
+              <div className="results-details">
+                <span className="result-item">
+                  <strong>{searchResults.destination || 'All areas'}</strong>
+                </span>
+                <span className="result-item">
+                  {searchResults.checkIn} to {searchResults.checkOut}
+                </span>
+                <span className="result-item">
+                  {searchResults.nights} night{searchResults.nights !== 1 ? 's' : ''}
+                </span>
+                <span className="result-item">
+                  {searchResults.guests} guest{searchResults.guests !== 1 ? 's' : ''}
+                </span>
+                <span className="result-item">
+                  {searchResults.totalResults} propert{searchResults.totalResults !== 1 ? 'ies' : 'y'} found
+                </span>
+                {searchResults.averagePrice > 0 && (
+                  <span className="result-item price">
+                    Avg: AED {searchResults.averagePrice}/night
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Properties Grid */}
+      <div className="properties-section">
+        <div className="container">
+          <h1>{searchResults ? 'Available Properties' : 'Book an Apartment'}</h1>
+          {loading ? (
+            <div className="loading-state">
+              <div className="skeleton-grid">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="skeleton-card"></div>
+                ))}
+              </div>
+            </div>
+          ) : properties.length === 0 && searchResults ? (
+            <div className="no-results-state">
+              <div className="no-results-content">
+                <h3>No properties found for "{searchResults.destination}"</h3>
+                <p>Try searching with different terms or browse all available properties:</p>
+                <div className="search-suggestions">
+                  <h4>Popular searches:</h4>
+                  <div className="suggestion-tags">
+                    <button
+                      className="suggestion-tag"
+                      onClick={() => {
+                        setCalculatorForm(prev => ({ ...prev, destination: 'Dubai Marina' }));
+                        setTimeout(() => handleCalculatorSearch(), 100);
+                      }}
+                    >
+                      Dubai Marina
+                    </button>
+                    <button
+                      className="suggestion-tag"
+                      onClick={() => {
+                        setCalculatorForm(prev => ({ ...prev, destination: 'Princess Tower' }));
+                        setTimeout(() => handleCalculatorSearch(), 100);
+                      }}
+                    >
+                      Princess Tower
+                    </button>
+                    <button
+                      className="suggestion-tag"
+                      onClick={() => {
+                        setCalculatorForm(prev => ({ ...prev, destination: 'Downtown Dubai' }));
+                        setTimeout(() => handleCalculatorSearch(), 100);
+                      }}
+                    >
+                      Downtown Dubai
+                    </button>
+                    <button
+                      className="suggestion-tag"
+                      onClick={() => {
+                        setCalculatorForm(prev => ({ ...prev, destination: 'Urban Oasis' }));
+                        setTimeout(() => handleCalculatorSearch(), 100);
+                      }}
+                    >
+                      Urban Oasis
+                    </button>
+                    <button
+                      className="suggestion-tag"
+                      onClick={() => {
+                        setCalculatorForm(prev => ({ ...prev, destination: 'Luxury' }));
+                        setTimeout(() => handleCalculatorSearch(), 100);
+                      }}
+                    >
+                      Luxury
+                    </button>
+                    <button
+                      className="suggestion-tag"
+                      onClick={() => {
+                        setCalculatorForm(prev => ({ ...prev, destination: 'Family' }));
+                        setTimeout(() => handleCalculatorSearch(), 100);
+                      }}
+                    >
+                      Family Friendly
+                    </button>
+                  </div>
+                </div>
+                <button
+                  className="show-all-properties-btn"
+                  onClick={handleClearFilters}
+                >
+                  Show All Properties
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="properties-grid">
+              {properties.map(property => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onBookNow={handleBookNow}
+                  onViewDetails={handleViewDetails}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Discount Banner */}
+      <DiscountBanner />
+
+      {/* Booking Modal */}
+      {showBookingModal && (
+        <BookingModal
+          property={selectedProperty}
+          onClose={() => setShowBookingModal(false)}
+          onSubmit={handleBookingSubmit}
+        />
+      )}
+    </div>
+  );
+};
+
+
+// Property Card Component
+const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
+  return (
+    <article className="property-card">
+      <div className="property-image">
+        <img src={property.images[0]} alt={property.title} />
+        {property.featured && <span className="badge featured">Featured</span>}
+        <div className="rating-badge">
+          <span className="star">★</span>
+          <span>{property.rating}</span>
+        </div>
+      </div>
+
+      <div className="property-content">
+        <h3 className="property-title">{property.title}</h3>
+
+        <div className="property-meta">
+          <span>👥 {property.guests}</span>
+          <span>🛏 {property.beds}</span>
+          <span>🛁 {property.bathrooms}</span>
+        </div>
+
+        <p className="property-location">{property.location}</p>
+
+        <div className="property-highlights">
+          {property.highlights.slice(0, 2).map((highlight, index) => (
+            <span key={index} className="highlight-tag">{highlight}</span>
+          ))}
+        </div>
+
+        <div className="property-dtcm">
+          <span className="dtcm-code">DTCM: {property.dtcm}</span>
+        </div>
+
+        <div className="property-price">
+          <span className="price-label">From</span>
+          <PriceDisplay
+            price={property.price}
+            showPeriod={true}
+            period="/ night"
+            size="small"
+            className="price-amount"
+          />
+        </div>
+
+        <div className="property-actions">
+          <button
+            className="btn-secondary"
+            onClick={() => onViewDetails(property)}
+          >
+            View Details
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => onBookNow(property)}
+          >
+            Book Now
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+// Booking Modal Component
+const BookingModal = ({ property, onClose, onSubmit }) => {
+  const [bookingData, setBookingData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    checkIn: '',
+    checkOut: '',
+    guests: 1
+  });
+
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+  const [showCouponList, setShowCouponList] = useState(false);
+
+  const handleApplyCoupon = () => {
+    setCouponError('');
+    setCouponSuccess('');
+
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+
+    const total = calculateBaseTotal();
+    const validation = validateCoupon(couponCode, total);
+
+    if (validation.valid) {
+      setAppliedCoupon(validation.coupon);
+      setCouponSuccess(validation.message);
+      setCouponError('');
+    } else {
+      setCouponError(validation.message);
+      setAppliedCoupon(null);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+    setCouponSuccess('');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const pricing = getPricingDetails();
+
+    onSubmit({
+      ...bookingData,
+      propertyId: property.id,
+      totalPrice: pricing.finalTotal,
+      coupon: appliedCoupon,
+      pricingBreakdown: pricing
+    });
+  };
+
+  const calculateBaseTotal = () => {
+    if (!bookingData.checkIn || !bookingData.checkOut) return 0;
+
+    const nights = Math.ceil((new Date(bookingData.checkOut) - new Date(bookingData.checkIn)) / (1000 * 60 * 60 * 24));
+    if (nights <= 0) return 0;
+
+    const basePrice = property.price * nights;
+    const cleaningFee = 400;
+    const taxes = basePrice * 0.08;
+    return basePrice + cleaningFee + taxes;
+  };
+
+  const getPricingDetails = () => {
+    if (!bookingData.checkIn || !bookingData.checkOut) {
+      return {
+        nights: 0,
+        basePrice: 0,
+        cleaningFee: 0,
+        taxes: 0,
+        subtotal: 0,
+        discountAmount: 0,
+        finalTotal: 0
+      };
+    }
+
+    const nights = Math.ceil((new Date(bookingData.checkOut) - new Date(bookingData.checkIn)) / (1000 * 60 * 60 * 24));
+    const basePrice = property.price * nights;
+    const cleaningFee = 400;
+    const taxes = basePrice * 0.08;
+    const subtotal = basePrice + cleaningFee + taxes;
+
+    let discountAmount = 0;
+    let finalTotal = subtotal;
+
+    if (appliedCoupon) {
+      const discount = calculateDiscount(appliedCoupon, subtotal);
+      discountAmount = discount.discountAmount;
+      finalTotal = discount.finalAmount;
+    }
+
+    return {
+      nights,
+      basePrice,
+      cleaningFee,
+      taxes,
+      subtotal,
+      discountAmount,
+      finalTotal,
+      discountPercentage: appliedCoupon ? appliedCoupon.discount : 0
+    };
+  };
+
+  return (
+    <div className="booking-modal-overlay">
+      <div className="booking-modal">
+        <div className="modal-header">
+          <h2>Book {property.title}</h2>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="booking-form">
+          <div className="booking-dates">
+            <div className="date-field">
+              <label>Check-in</label>
+              <input
+                type="date"
+                value={bookingData.checkIn}
+                onChange={(e) => setBookingData(prev => ({ ...prev, checkIn: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="date-field">
+              <label>Check-out</label>
+              <input
+                type="date"
+                value={bookingData.checkOut}
+                onChange={(e) => setBookingData(prev => ({ ...prev, checkOut: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="date-field">
+              <label>Guests</label>
+              <select
+                value={bookingData.guests}
+                onChange={(e) => setBookingData(prev => ({ ...prev, guests: parseInt(e.target.value) }))}
+                required
+              >
+                <option value={1}>1 Guest</option>
+                <option value={2}>2 Guests</option>
+                <option value={3}>3 Guests</option>
+                <option value={4}>4 Guests</option>
+                <option value={5}>5+ Guests</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="contact-info">
+            <h3>Contact Information</h3>
+            <div className="form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                value={bookingData.name}
+                onChange={(e) => setBookingData(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={bookingData.email}
+                onChange={(e) => setBookingData(prev => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input
+                type="tel"
+                value={bookingData.phone}
+                onChange={(e) => setBookingData(prev => ({ ...prev, phone: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Coupon Section */}
+          <div className="coupon-section">
+            <h3>Have a Coupon Code?</h3>
+            <p className="coupon-subtitle">Get 10% OFF on your booking!</p>
+
+            <div className="coupon-input-group">
+              <input
+                type="text"
+                className="coupon-input"
+                placeholder="Enter coupon code (e.g., WELCOME10)"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                disabled={appliedCoupon !== null}
+              />
+              {!appliedCoupon ? (
+                <button
+                  type="button"
+                  className="apply-coupon-btn"
+                  onClick={handleApplyCoupon}
+                >
+                  Apply
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="remove-coupon-btn"
+                  onClick={handleRemoveCoupon}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+
+            {couponError && (
+              <div className="coupon-message error">
+                ❌ {couponError}
+              </div>
+            )}
+
+            {couponSuccess && (
+              <div className="coupon-message success">
+                ✅ {couponSuccess}
+              </div>
+            )}
+
+            <div className="available-coupons">
+              <button
+                type="button"
+                className="show-coupons-btn"
+                onClick={() => setShowCouponList(!showCouponList)}
+              >
+                {showCouponList ? '▼' : '▶'} View Available Coupons
+              </button>
+
+              {showCouponList && (
+                <div className="coupon-list">
+                  {getActiveCoupons().map((coupon, index) => (
+                    <div
+                      key={index}
+                      className="coupon-item"
+                      onClick={() => {
+                        setCouponCode(coupon.code);
+                        setShowCouponList(false);
+                      }}
+                    >
+                      <div className="coupon-code-badge">{coupon.code}</div>
+                      <div className="coupon-description">
+                        <strong>{coupon.discount}% OFF</strong>
+                        <span>{coupon.description}</span>
+                        {coupon.minBooking > 0 && (
+                          <small>Min. booking: AED {coupon.minBooking}</small>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="booking-summary">
+            <h3>Booking Summary</h3>
+            {(() => {
+              const pricing = getPricingDetails();
+              return (
+                <>
+                  <div className="summary-line">
+                    <span>
+                      <PriceDisplay price={property.price} size="small" /> × {pricing.nights} nights
+                    </span>
+                    <PriceDisplay price={pricing.basePrice} size="small" />
+                  </div>
+                  <div className="summary-line">
+                    <span>Cleaning fee</span>
+                    <PriceDisplay price={pricing.cleaningFee} size="small" />
+                  </div>
+                  <div className="summary-line">
+                    <span>Service charges (8%)</span>
+                    <PriceDisplay price={pricing.taxes} size="small" />
+                  </div>
+
+                  {appliedCoupon && (
+                    <>
+                      <div className="summary-line subtotal">
+                        <span>Subtotal</span>
+                        <PriceDisplay price={pricing.subtotal} size="small" />
+                      </div>
+                      <div className="summary-line discount">
+                        <span className="discount-label">
+                          🎉 Discount ({appliedCoupon.discount}%)
+                          <small>{appliedCoupon.code}</small>
+                        </span>
+                        <span className="discount-amount">
+                          -<PriceDisplay price={pricing.discountAmount} size="small" />
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="summary-line total">
+                    <span>Total</span>
+                    <PriceDisplay price={pricing.finalTotal} size="medium" className="price-primary" />
+                  </div>
+
+                  {appliedCoupon && (
+                    <div className="savings-badge">
+                      💰 You saved <PriceDisplay price={pricing.discountAmount} size="small" />!
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+
+          <button type="submit" className="confirm-booking-btn">
+            Confirm Booking
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default BookApartment;

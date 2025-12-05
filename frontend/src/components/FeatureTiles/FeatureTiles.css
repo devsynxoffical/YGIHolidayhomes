@@ -1,0 +1,126 @@
+/* Feature Tiles */
+.feature-tiles {
+  background: var(--bg);
+}
+
+.tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.feature-tile {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.tile-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.tile-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-normal);
+}
+
+.feature-tile:hover .tile-image {
+  transform: scale(1.02);
+}
+
+.tile-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: var(--space-8) var(--space-6) var(--space-6);
+  color: var(--bg);
+}
+
+.tile-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tile-title {
+  font-size: var(--font-size-h2);
+  font-weight: 500;
+  color: var(--bg);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tile-subtitle {
+  font-size: var(--font-size-body);
+  color: var(--bg);
+  opacity: 0.9;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.tile-cta {
+  font-size: var(--font-size-small);
+  color: var(--bg);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-small);
+  font-weight: 500;
+  margin-top: var(--space-2);
+  transition: all var(--transition-fast);
+  align-self: flex-start;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.tile-cta:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+  .tiles-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+  
+  .tile-overlay {
+    padding: var(--space-6) var(--space-4) var(--space-4);
+  }
+  
+  .tile-title {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .tiles-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  
+  .feature-tile {
+    aspect-ratio: 3/2;
+  }
+  
+  .tile-overlay {
+    padding: var(--space-4) var(--space-3) var(--space-3);
+  }
+  
+  .tile-title {
+    font-size: 20px;
+  }
+  
+  .tile-subtitle {
+    font-size: 14px;
+  }
+}
