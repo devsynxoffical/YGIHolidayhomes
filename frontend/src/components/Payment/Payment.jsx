@@ -31,9 +31,9 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
 
     try {
       // Create payment intent on backend
-      const backendUrl = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes.com/backend';
+      const backendUrl = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
       console.log('Backend URL:', backendUrl);
-      
+
       const response = await fetch(`${backendUrl}/create-payment-intent`, {
         method: 'POST',
         headers: {
@@ -61,7 +61,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
 
       const responseText = await response.text();
       console.log('Backend response:', responseText);
-      
+
       let responseData;
       try {
         responseData = JSON.parse(responseText);
@@ -72,7 +72,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
       }
 
       const { clientSecret, error: serverError } = responseData;
-      
+
       if (serverError) {
         console.error('Payment intent creation error:', serverError);
         throw new Error(`Payment setup failed: ${serverError.message || serverError}`);
@@ -102,7 +102,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
 
       if (paymentIntent.status === 'succeeded') {
         // Create booking record
-        const bookingResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ygiholidayhomes.com/backend'}/create-booking`, {
+        const bookingResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app'}/create-booking`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
           console.log('Submitting booking to Google Sheets:', sheetsData);
           const sheetsResult = await submitBookingToGoogleSheets(sheetsData);
           console.log('Google Sheets submission result:', sheetsResult);
-          
+
           if (sheetsResult.success) {
             console.log('✅ Booking saved to Google Sheets successfully');
           } else {
@@ -161,7 +161,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
         <div className="success-icon">✓</div>
         <h2>Payment Successful!</h2>
         <p>Your booking has been confirmed. You will receive a confirmation email shortly.</p>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => window.location.href = '/'}
         >
@@ -175,7 +175,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
     <form onSubmit={handleSubmit} className="payment-form">
       <div className="payment-section">
         <h3>Payment Details</h3>
-        
+
         <div className="form-group">
           <label htmlFor="card-element">Card Information</label>
           <div className="card-element-container">
@@ -245,7 +245,7 @@ const Payment = ({ onNavigate, bookingData }) => {
           phone: bookingData.bookingData.phone || '+971501234567'
         };
       }
-      
+
       // Fallback: Calculate pricing from booking data
       const nights = Math.ceil((new Date(bookingData.bookingData.checkOut) - new Date(bookingData.bookingData.checkIn)) / (1000 * 60 * 60 * 24));
       const basePrice = bookingData.price * nights;
@@ -255,7 +255,7 @@ const Payment = ({ onNavigate, bookingData }) => {
       // Apply automatic 30% discount (skip if property excludes discount)
       const automaticDiscount = bookingData.excludeDiscount ? 0 : subtotal * 0.30;
       const totalAmount = subtotal - automaticDiscount;
-      
+
       return {
         propertyName: bookingData.title,
         checkIn: bookingData.bookingData.checkIn,
@@ -276,7 +276,7 @@ const Payment = ({ onNavigate, bookingData }) => {
         phone: bookingData.bookingData.phone || '+971501234567'
       };
     }
-    
+
     // Fallback default values
     return {
       propertyName: 'Luxury Dubai Apartment',
@@ -314,47 +314,47 @@ const Payment = ({ onNavigate, bookingData }) => {
         </div>
 
         <div className="payment-content">
-        <div className="booking-summary">
-          <h3>Booking Summary</h3>
-          <div className="property-info">
-            <h4>{bookingDetails.propertyName}</h4>
-            <div className="booking-details">
-              <div className="detail-row">
-                <span>Check-in:</span>
-                <span>{new Date(bookingDetails.checkIn).toLocaleDateString()}</span>
-              </div>
-              <div className="detail-row">
-                <span>Check-out:</span>
-                <span>{new Date(bookingDetails.checkOut).toLocaleDateString()}</span>
-              </div>
-              <div className="detail-row">
-                <span>Guests:</span>
-                <span>{bookingDetails.guests}</span>
-              </div>
-              <div className="detail-row">
-                <span>Nights:</span>
-                <span>{bookingDetails.nights}</span>
+          <div className="booking-summary">
+            <h3>Booking Summary</h3>
+            <div className="property-info">
+              <h4>{bookingDetails.propertyName}</h4>
+              <div className="booking-details">
+                <div className="detail-row">
+                  <span>Check-in:</span>
+                  <span>{new Date(bookingDetails.checkIn).toLocaleDateString()}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Check-out:</span>
+                  <span>{new Date(bookingDetails.checkOut).toLocaleDateString()}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Guests:</span>
+                  <span>{bookingDetails.guests}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Nights:</span>
+                  <span>{bookingDetails.nights}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="guest-info">
-            <h4>Guest Information</h4>
-            <div className="guest-details">
-              <div className="detail-row">
-                <span>Name:</span>
-                <span>{bookingDetails.guestName}</span>
-              </div>
-              <div className="detail-row">
-                <span>Email:</span>
-                <span>{bookingDetails.email}</span>
-              </div>
-              <div className="detail-row">
-                <span>Phone:</span>
-                <span>{bookingDetails.phone}</span>
+            <div className="guest-info">
+              <h4>Guest Information</h4>
+              <div className="guest-details">
+                <div className="detail-row">
+                  <span>Name:</span>
+                  <span>{bookingDetails.guestName}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Email:</span>
+                  <span>{bookingDetails.email}</span>
+                </div>
+                <div className="detail-row">
+                  <span>Phone:</span>
+                  <span>{bookingDetails.phone}</span>
+                </div>
               </div>
             </div>
-          </div>
 
             <div className="pricing-breakdown">
               <div className="price-row">
@@ -369,7 +369,7 @@ const Payment = ({ onNavigate, bookingData }) => {
                 <span>Service charges (8%)</span>
                 <span>AED {Math.round(bookingDetails.taxes)}</span>
               </div>
-              
+
               {bookingDetails.automaticDiscount > 0 && (
                 <>
                   <div className="price-row subtotal-row">
@@ -388,7 +388,7 @@ const Payment = ({ onNavigate, bookingData }) => {
                   </div>
                 </>
               )}
-              
+
               {bookingDetails.coupon && bookingDetails.discountAmount > 0 && (
                 <div className="price-row discount-row coupon-discount">
                   <span className="discount-label">
@@ -400,12 +400,12 @@ const Payment = ({ onNavigate, bookingData }) => {
                   </span>
                 </div>
               )}
-              
+
               <div className="price-row total">
                 <span>Total Amount</span>
                 <span>AED {Math.round(bookingDetails.totalAmount)}</span>
               </div>
-              
+
               {(bookingDetails.automaticDiscount || 0) > 0 && (
                 <div className="savings-badge automatic-savings">
                   💰 You saved AED {Math.round((bookingDetails.automaticDiscount || ((bookingDetails.subtotal || (bookingDetails.totalBasePrice + bookingDetails.cleaningFee + bookingDetails.taxes)) * 0.30)) + (bookingDetails.discountAmount || 0))} with our special offer!

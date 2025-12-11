@@ -1,0 +1,203 @@
+[1mdiff --git a/frontend/src/components/Payment/Payment.jsx b/frontend/src/components/Payment/Payment.jsx[m
+[1mindex f975e7f..afe3ccb 100644[m
+[1m--- a/frontend/src/components/Payment/Payment.jsx[m
+[1m+++ b/frontend/src/components/Payment/Payment.jsx[m
+[36m@@ -10,7 +10,9 @@[m [mimport { submitBookingToGoogleSheets } from '../../utils/googleSheets';[m
+ import './Payment.css';[m
+ [m
+ // Initialize Stripe with environment variable[m
+[31m-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_live_51RAZ1pDx3aQl1WbOuU3AvkSEOU0tEQiTkIKSvwrObhDgweCM0X8PWqowELKZ1dtRGCFcDFLb0NxDyfCWcwuqqkVk007vXj2nV1');[m
+[32m+[m[32m// IMPORTANT: Set VITE_STRIPE_PUBLISHABLE_KEY in your .env file[m
+[32m+[m[32mconst stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);[m
+[32m+[m
+ [m
+ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, bookingData }) => {[m
+   const stripe = useStripe();[m
+[36m@@ -33,7 +35,7 @@[m [mconst PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking[m
+       // Create payment intent on backend[m
+       const backendUrl = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes.com/backend';[m
+       console.log('Backend URL:', backendUrl);[m
+[31m-      [m
+[32m+[m
+       const response = await fetch(`${backendUrl}/create-payment-intent`, {[m
+         method: 'POST',[m
+         headers: {[m
+[36m@@ -61,7 +63,7 @@[m [mconst PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking[m
+ [m
+       const responseText = await response.text();[m
+       console.log('Backend response:', responseText);[m
+[31m-      [m
+[32m+[m
+       let responseData;[m
+       try {[m
+         responseData = JSON.parse(responseText);[m
+[36m@@ -72,7 +74,7 @@[m [mconst PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking[m
+       }[m
+ [m
+       const { clientSecret, error: serverError } = responseData;[m
+[31m-      [m
+[32m+[m
+       if (serverError) {[m
+         console.error('Payment intent creation error:', serverError);[m
+         throw new Error(`Payment setup failed: ${serverError.message || serverError}`);[m
+[36m@@ -132,7 +134,7 @@[m [mconst PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking[m
+           console.log('Submitting booking to Google Sheets:', sheetsData);[m
+           const sheetsResult = await submitBookingToGoogleSheets(sheetsData);[m
+           console.log('Google Sheets submission result:', sheetsResult);[m
+[31m-          [m
+[32m+[m
+           if (sheetsResult.success) {[m
+             console.log('✅ Booking saved to Google Sheets successfully');[m
+           } else {[m
+[36m@@ -161,7 +163,7 @@[m [mconst PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking[m
+         <div className="success-icon">✓</div>[m
+         <h2>Payment Successful!</h2>[m
+         <p>Your booking has been confirmed. You will receive a confirmation email shortly.</p>[m
+[31m-        <button [m
+[32m+[m[32m        <button[m
+           className="btn btn-primary"[m
+           onClick={() => window.location.href = '/'}[m
+         >[m
+[36m@@ -175,7 +177,7 @@[m [mconst PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking[m
+     <form onSubmit={handleSubmit} className="payment-form">[m
+       <div className="payment-section">[m
+         <h3>Payment Details</h3>[m
+[31m-        [m
+[32m+[m
+         <div className="form-group">[m
+           <label htmlFor="card-element">Card Information</label>[m
+           <div className="card-element-container">[m
+[36m@@ -244,14 +246,14 @@[m [mconst Payment = ({ onNavigate, bookingData }) => {[m
+           phone: bookingData.bookingData.phone || '+971501234567'[m
+         };[m
+       }[m
+[31m-      [m
+[32m+[m
+       // Fallback: Calculate pricing from booking data[m
+       const nights = Math.ceil((new Date(bookingData.bookingData.checkOut) - new Date(bookingData.bookingData.checkIn)) / (1000 * 60 * 60 * 24));[m
+       const basePrice = bookingData.price * nights;[m
+       const taxes = basePrice * 0.08;[m
+       const cleaningFee = 400;[m
+       const totalAmount = basePrice + taxes + cleaningFee;[m
+[31m-      [m
+[32m+[m
+       return {[m
+         propertyName: bookingData.title,[m
+         checkIn: bookingData.bookingData.checkIn,[m
+[36m@@ -270,7 +272,7 @@[m [mconst Payment = ({ onNavigate, bookingData }) => {[m
+         phone: bookingData.bookingData.phone || '+971501234567'[m
+       };[m
+     }[m
+[31m-    [m
+[32m+[m
+     // Fallback default values[m
+     return {[m
+       propertyName: 'Luxury Dubai Apartment',[m
+[36m@@ -308,47 +310,47 @@[m [mconst Payment = ({ onNavigate, bookingData }) => {[m
+         </div>[m
+ [m
+         <div className="payment-content">[m
+[31m-        <div className="booking-summary">[m
+[31m-          <h3>Booking Summary</h3>[m
+[31m-          <div className="property-info">[m
+[31m-            <h4>{bookingDetails.propertyName}</h4>[m
+[31m-            <div className="booking-details">[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Check-in:</span>[m
+[31m-                <span>{new Date(bookingDetails.checkIn).toLocaleDateString()}</span>[m
+[31m-              </div>[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Check-out:</span>[m
+[31m-                <span>{new Date(bookingDetails.checkOut).toLocaleDateString()}</span>[m
+[31m-              </div>[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Guests:</span>[m
+[31m-                <span>{bookingDetails.guests}</span>[m
+[31m-              </div>[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Nights:</span>[m
+[31m-                <span>{bookingDetails.nights}</span>[m
+[32m+[m[32m          <div className="booking-summary">[m
+[32m+[m[32m            <h3>Booking Summary</h3>[m
+[32m+[m[32m            <div className="property-info">[m
+[32m+[m[32m              <h4>{bookingDetails.propertyName}</h4>[m
+[32m+[m[32m              <div className="booking-details">[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Check-in:</span>[m
+[32m+[m[32m                  <span>{new Date(bookingDetails.checkIn).toLocaleDateString()}</span>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Check-out:</span>[m
+[32m+[m[32m                  <span>{new Date(bookingDetails.checkOut).toLocaleDateString()}</span>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Guests:</span>[m
+[32m+[m[32m                  <span>{bookingDetails.guests}</span>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Nights:</span>[m
+[32m+[m[32m                  <span>{bookingDetails.nights}</span>[m
+[32m+[m[32m                </div>[m
+               </div>[m
+             </div>[m
+[31m-          </div>[m
+ [m
+[31m-          <div className="guest-info">[m
+[31m-            <h4>Guest Information</h4>[m
+[31m-            <div className="guest-details">[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Name:</span>[m
+[31m-                <span>{bookingDetails.guestName}</span>[m
+[31m-              </div>[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Email:</span>[m
+[31m-                <span>{bookingDetails.email}</span>[m
+[31m-              </div>[m
+[31m-              <div className="detail-row">[m
+[31m-                <span>Phone:</span>[m
+[31m-                <span>{bookingDetails.phone}</span>[m
+[32m+[m[32m            <div className="guest-info">[m
+[32m+[m[32m              <h4>Guest Information</h4>[m
+[32m+[m[32m              <div className="guest-details">[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Name:</span>[m
+[32m+[m[32m                  <span>{bookingDetails.guestName}</span>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Email:</span>[m
+[32m+[m[32m                  <span>{bookingDetails.email}</span>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m                <div className="detail-row">[m
+[32m+[m[32m                  <span>Phone:</span>[m
+[32m+[m[32m                  <span>{bookingDetails.phone}</span>[m
+[32m+[m[32m                </div>[m
+               </div>[m
+             </div>[m
+[31m-          </div>[m
+ [m
+             <div className="pricing-breakdown">[m
+               <div className="price-row">[m
+[36m@@ -363,7 +365,7 @@[m [mconst Payment = ({ onNavigate, bookingData }) => {[m
+                 <span>Service charges (8%)</span>[m
+                 <span>AED {Math.round(bookingDetails.taxes)}</span>[m
+               </div>[m
+[31m-              [m
+[32m+[m
+               {bookingDetails.coupon && bookingDetails.discountAmount > 0 && ([m
+                 <>[m
+                   <div className="price-row subtotal-row">[m
+[36m@@ -381,12 +383,12 @@[m [mconst Payment = ({ onNavigate, bookingData }) => {[m
+                   </div>[m
+                 </>[m
+               )}[m
+[31m-              [m
+[32m+[m
+               <div className="price-row total">[m
+                 <span>Total Amount</span>[m
+                 <span>AED {Math.round(bookingDetails.totalAmount)}</span>[m
+               </div>[m
+[31m-              [m
+[32m+[m
+               {bookingDetails.coupon && bookingDetails.discountAmount > 0 && ([m
+                 <div className="savings-badge">[m
+                   💰 You saved AED {Math.round(bookingDetails.discountAmount)} with code {bookingDetails.coupon.code}![m

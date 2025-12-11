@@ -1,0 +1,25 @@
+# Backend Environment Variables for Production
+# Upload this file to your cPanel backend folder as .env
+
+# ⚠️ CRITICAL: Replace YOUR_ACTUAL_SECRET_KEY_HERE with your real Stripe secret key
+# Get it from: https://dashboard.stripe.com/apikeys
+# It should start with: sk_live_
+
+STRIPE_SECRET_KEY=sk_live_YOUR_ACTUAL_SECRET_KEY_HERE
+
+# Stripe Webhook Secret (optional - only if you setup webhooks)
+# Get from: https://dashboard.stripe.com/webhooks
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
+
+# Server Configuration
+PORT=5000
+NODE_ENV=production
+
+# Frontend URL - the domain allowed to make API requests
+FRONTEND_URL=https://ygiholidayhomes.com
+
+# INSTRUCTIONS:
+# 1. Replace sk_live_YOUR_ACTUAL_SECRET_KEY_HERE with your real key
+# 2. Save this file
+# 3. Upload to cPanel: /home/yourusername/backend/.env
+# 4. Make sure filename is exactly: .env (with the dot at the beginning)

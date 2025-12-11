@@ -55,6 +55,11 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps, curl requests, or health checks from load balancers)
     if (!origin) return callback(null, true);
 
+    // Allow Railway domains (any *.up.railway.app)
+    if (origin.includes('.up.railway.app')) {
+      return callback(null, true);
+    }
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -316,8 +321,10 @@ app.use('*', (req, res) => {
 });
 
 // Bind to 0.0.0.0 to accept connections from all interfaces (required for reverse proxies/load balancers)
+// Note: 0.0.0.0 is for server binding only - use localhost or 127.0.0.1 in your browser
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 YGI Backend server running on port ${PORT}`);
-  console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`📊 Health check (alternative): http://127.0.0.1:${PORT}/health`);
   console.log(`💳 Stripe integration ready`);
 });
