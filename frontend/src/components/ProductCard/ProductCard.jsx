@@ -59,12 +59,70 @@ const ProductCard = ({ product, onNavigate }) => {
       
       <div className="product-info">
         <h3 className="product-name">{product.title || product.name}</h3>
-        <p className="product-location">{product.location}</p>
-        <p className="product-type">{product.type}</p>
-        <p className="product-posted">{product.posted}</p>
-        <div className="product-bedrooms">
-          <span className="bedroom-count">{product.bedrooms}</span>
-          <span className="bedroom-icon">🛏️</span>
+        <div className="product-location-area">
+          <p className="product-location">{product.location}</p>
+          {product.area && (
+            <p className="product-area">📍 {product.area}</p>
+          )}
+        </div>
+        {product.description && (
+          <p className="product-description">{product.description}</p>
+        )}
+        <div className="product-details">
+          <div className="product-bedrooms">
+            <span className="bedroom-count">{product.bedrooms}</span>
+            <span className="bedroom-icon">🛏️</span>
+          </div>
+          {product.bathrooms && (
+            <div className="product-bathrooms">
+              <span className="bathroom-count">{product.bathrooms}</span>
+              <span className="bathroom-icon">🛁</span>
+            </div>
+          )}
+          {product.guests && (
+            <div className="product-guests">
+              <span className="guest-count">{product.guests}</span>
+              <span className="guest-icon">👥</span>
+            </div>
+          )}
+          {product.beds && (
+            <div className="product-beds">
+              <span className="beds-count">{product.beds}</span>
+              <span className="beds-icon">🛏️</span>
+            </div>
+          )}
+        </div>
+        {product.sleeps && (
+          <p className="product-sleeps">💤 {product.sleeps}</p>
+        )}
+        {product.highlights && product.highlights.length > 0 && (
+          <div className="product-highlights">
+            {product.highlights.slice(0, 3).map((highlight, index) => (
+              <span key={index} className="highlight-tag">{highlight}</span>
+            ))}
+            {product.highlights.length > 3 && (
+              <span className="highlight-more">+{product.highlights.length - 3} more</span>
+            )}
+          </div>
+        )}
+        {product.amenities && product.amenities.length > 0 && (
+          <div className="product-amenities">
+            <h4 className="amenities-title">What this place offers:</h4>
+            <div className="amenities-list">
+              {product.amenities.slice(0, 6).map((amenity, index) => (
+                <span key={index} className="amenity-tag">
+                  {amenity.length > 20 ? amenity.substring(0, 20) + '...' : amenity}
+                </span>
+              ))}
+              {product.amenities.length > 6 && (
+                <span className="amenity-more">+{product.amenities.length - 6} more amenities</span>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="product-meta">
+          <p className="product-type">{product.type}</p>
+          <p className="product-posted">{product.posted}</p>
         </div>
         <div className="product-price">
           <PriceDisplay 

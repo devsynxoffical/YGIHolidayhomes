@@ -32,9 +32,8 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     const basePrice = pricePerNight * nights;
     const cleaningFee = property.excludeCleaningFee ? 0 : 400;
     const serviceFee = basePrice * 0.08;
-    const taxes = basePrice * 0.05; // 5% VAT assumption if not specified
 
-    return basePrice + cleaningFee + serviceFee + taxes;
+    return basePrice + cleaningFee + serviceFee;
   };
 
   const handleBookingSubmit = (e) => {
@@ -369,10 +368,12 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                     ).toFixed(0)}
                   </span>
                 </div>
-                <div className="calc-row">
-                  <span>Cleaning fee</span>
-                  <span>AED 400</span>
-                </div>
+                {!property.excludeCleaningFee && (
+                  <div className="calc-row">
+                    <span>Cleaning fee</span>
+                    <span>AED 400</span>
+                  </div>
+                )}
                 <div className="calc-row">
                   <span>Service fee</span>
                   <span>

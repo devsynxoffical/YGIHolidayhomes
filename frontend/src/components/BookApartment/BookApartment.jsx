@@ -139,7 +139,8 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
           email: bookingData.email,
           phone: bookingData.phone
         },
-        totalPrice: bookingData.totalPrice
+        totalPrice: bookingData.totalPrice,
+        pricingBreakdown: bookingData.pricingBreakdown
       };
 
       // Close modal and navigate to payment page
@@ -961,10 +962,12 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
               </span>
                     <PriceDisplay price={pricing.basePrice} size="small" />
             </div>
-            <div className="summary-line">
-              <span>Cleaning fee</span>
-                    <PriceDisplay price={pricing.cleaningFee} size="small" />
-            </div>
+            {pricing.cleaningFee > 0 && (
+              <div className="summary-line">
+                <span>Cleaning fee</span>
+                <PriceDisplay price={pricing.cleaningFee} size="small" />
+              </div>
+            )}
             <div className="summary-line">
                     <span>Service charges (8%)</span>
                     <PriceDisplay price={pricing.taxes} size="small" />

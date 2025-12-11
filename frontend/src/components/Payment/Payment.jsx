@@ -225,6 +225,11 @@ const Payment = ({ onNavigate, bookingData }) => {
       // Check if pricing breakdown is provided from BookingModal
       if (bookingData.pricingBreakdown) {
         const pricing = bookingData.pricingBreakdown;
+        // Override cleaning fee if property excludes it
+        const cleaningFee = bookingData.excludeCleaningFee ? 0 : pricing.cleaningFee;
+        // Recalculate total without automatic discount
+        const subtotal = pricing.basePrice + cleaningFee + pricing.taxes;
+        const totalAmount = subtotal - (pricing.discountAmount || 0);
         return {
           propertyName: bookingData.title,
           checkIn: bookingData.bookingData.checkIn,
@@ -234,11 +239,11 @@ const Payment = ({ onNavigate, bookingData }) => {
           basePrice: bookingData.price,
           totalBasePrice: pricing.basePrice,
           taxes: pricing.taxes,
-          cleaningFee: pricing.cleaningFee,
-          subtotal: pricing.subtotal,
-          automaticDiscount: pricing.automaticDiscount || 0,
-          discountAmount: pricing.discountAmount,
-          totalAmount: pricing.finalTotal,
+          cleaningFee: cleaningFee,
+          subtotal: subtotal,
+          automaticDiscount: 0,
+          discountAmount: pricing.discountAmount || 0,
+          totalAmount: totalAmount,
           coupon: bookingData.coupon,
           guestName: bookingData.bookingData.name || 'Guest Name',
           email: bookingData.bookingData.email || 'guest@example.com',
@@ -252,9 +257,9 @@ const Payment = ({ onNavigate, bookingData }) => {
       const taxes = basePrice * 0.08;
       const cleaningFee = bookingData.excludeCleaningFee ? 0 : 400;
       const subtotal = basePrice + taxes + cleaningFee;
-      // Apply automatic 30% discount (skip if property excludes discount)
-      const automaticDiscount = bookingData.excludeDiscount ? 0 : subtotal * 0.30;
-      const totalAmount = subtotal - automaticDiscount;
+      // No automatic discount applied
+      const automaticDiscount = 0;
+      const totalAmount = subtotal;
 
       return {
         propertyName: bookingData.title,
@@ -361,33 +366,17 @@ const Payment = ({ onNavigate, bookingData }) => {
                 <span>Base Price (AED {bookingDetails.basePrice}/night × {bookingDetails.nights} nights)</span>
                 <span>AED {Math.round(bookingDetails.totalBasePrice)}</span>
               </div>
-              <div className="price-row">
-                <span>Cleaning Fee</span>
-                <span>AED {bookingDetails.cleaningFee}</span>
-              </div>
+              {bookingDetails.cleaningFee > 0 && (
+                <div className="price-row">
+                  <span>Cleaning Fee</span>
+                  <span>AED {bookingDetails.cleaningFee}</span>
+                </div>
+              )}
               <div className="price-row">
                 <span>Service charges (8%)</span>
                 <span>AED {Math.round(bookingDetails.taxes)}</span>
               </div>
 
-              {bookingDetails.automaticDiscount > 0 && (
-                <>
-                  <div className="price-row subtotal-row">
-                    <span>Subtotal</span>
-                    <span>AED {Math.round(bookingDetails.subtotal || (bookingDetails.totalBasePrice + bookingDetails.cleaningFee + bookingDetails.taxes))}</span>
-                  </div>
-
-                  {/* Automatic 30% Discount */}
-                  <div className="price-row discount-row automatic-discount">
-                    <span className="discount-label">
-                      🎉 Special Offer (30% OFF)
-                    </span>
-                    <span className="discount-amount">
-                      -AED {Math.round(bookingDetails.automaticDiscount || ((bookingDetails.subtotal || (bookingDetails.totalBasePrice + bookingDetails.cleaningFee + bookingDetails.taxes)) * 0.30))}
-                    </span>
-                  </div>
-                </>
-              )}
 
               {bookingDetails.coupon && bookingDetails.discountAmount > 0 && (
                 <div className="price-row discount-row coupon-discount">
@@ -406,11 +395,6 @@ const Payment = ({ onNavigate, bookingData }) => {
                 <span>AED {Math.round(bookingDetails.totalAmount)}</span>
               </div>
 
-              {(bookingDetails.automaticDiscount || 0) > 0 && (
-                <div className="savings-badge automatic-savings">
-                  💰 You saved AED {Math.round((bookingDetails.automaticDiscount || ((bookingDetails.subtotal || (bookingDetails.totalBasePrice + bookingDetails.cleaningFee + bookingDetails.taxes)) * 0.30)) + (bookingDetails.discountAmount || 0))} with our special offer!
-                </div>
-              )}
             </div>
           </div>
 

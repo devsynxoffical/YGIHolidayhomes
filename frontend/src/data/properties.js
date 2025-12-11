@@ -22,11 +22,11 @@ export const properties = [
     location: "Marina Residence 2, Palm Jumeirah",
     highlights: ["Steps to beach", "Direct access to Nakheel Mall", "Pool", "Kids pool", "Gym", "Concierge", "Smartlock"],
     dtcm: "PAL-MAR-IFZEN",
-    sleeps: "3 King sized beds",
+    sleeps: "3 Queen sized beds",
     featured: true,
     available: true,
     slug: "sea-view-2bhk-palm-jumeirah-marina",
-    description: "Princess Tower, located in the heart of Dubai Marina, proudly holds the title of the \"Tallest Residential Building\". This 2-bedroom apartment offers stunning views with Tram just a short walk away, exploring the city. You'll find a variety of markets beneath the tower, alongside a selection of delectable restaurants lining the marina. Marina Mall and JBR Beach are also nearby. The iconic Palm Jumeirah is just a short distance away, adding to the allure of this exceptional location.",
+    description: "Nestled on the iconic Palm Jumeirah, Marina Residence 2, this exquisite two-Bedroom apartment one the most prestigious buildings on Palm Jumeirah, located at the very top of the trunk.",
     space: {
       kitchen: "Fully Equipped kitchen with dishwasher, fridge microwave, cooking utensils, toaster, fridge, cooktop etc.",
       living: "Beautiful views in day and night. sunny room with clean bed linen and quiet and clean apartment.",
@@ -49,19 +49,22 @@ export const properties = [
       "Registration Details: PAL-MAR-IFZEN"
     ],
     amenities: [
-      "Bathtub", "Hot water", "Washer", "Essentials", "Towels", "Bed sheets", "Soap", "Toilet paper", "Hangers", "Bed linens",
-      "Iron", "Clothing storage: wardrobe", "Exercise equipment", "Crib", "Air conditioning", "Smoke alarm",
-      "Carbon monoxide alarm", "Wifi", "Kitchen", "Space where guests can cook their own meals", "Refrigerator",
-      "Microwave", "Cooking basics", "Pots and pans, oil, salt and pepper", "Dishes and silverware",
-      "Bowls, chopsticks, plates, cups, etc.", "Stove", "Oven", "Hot water kettle", "Toaster", "Dining table",
-      "Waterfront", "Right next to a body of water", "Beach access", "Guests can enjoy a nearby beach",
-      "Private entrance", "Separate street or building entrance", "Shared patio or balcony", "Free parking on premises",
-      "Pool", "Elevator", "The home or building has an elevator that's at least 52 inches deep and a doorway at least 32 inches wide",
-      "Shared gym in building", "Long term stays allowed", "Allow stay for 28 days or more", "Self check-in", "Smart lock",
+      "Bathtub", "Bidet", "Hot water",
+      "Washer", "Hangers", "Bed linens", "Iron", "Safe", "Clothing storage",
+      "TV", "Exercise equipment", "Pool table",
+      "Outdoor playground", "An outdoor area equipped with play structures for children",
+      "Air conditioning", "Heating",
+      "Exterior security cameras on property", "Exterior security camera present", "Smoke alarm", "Carbon monoxide alarm", "Fire extinguisher",
+      "Wifi",
+      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Cooking basics", "Pots and pans, oil, salt and pepper", "Dishes and silverware", "Bowls, chopsticks, plates, cups, etc.", "Stove", "Oven", "Hot water kettle", "Dining table",
+      "Waterfront", "Right next to a body of water", "Beach access", "Guests can enjoy a nearby beach", "Lake access", "Guests can get to a lake using a path or dock", "Private entrance", "Separate street or building entrance",
+      "Patio or balcony", "Outdoor furniture",
+      "Free parking on premises", "Pool", "Elevator", "The home or building has an elevator that's at least 52 inches deep and a doorway at least 32 inches wide", "Gym",
+      "Long term stays allowed", "Allow stay for 28 days or more", "Self check-in", "Smart lock",
       "Housekeeping - available at extra cost"
     ],
     guestAccess: "This place has easy access to all parts of Dubai as all public transports are 1-3 mins away from the building.",
-    otherNotes: "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: PAL-MAR-IFZEN",
+    otherNotes: "A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: PAL-MAR-IFZEN",
     reviews: [
       {
         id: 1,
@@ -124,16 +127,16 @@ export const properties = [
     ],
     location: "Princess Tower, Dubai Marina",
     highlights: ["Smartlock self check-in", "Indoor/Outdoor pools", "Gym", "Kids play", "24/7 security", "Parking"],
-    dtcm: "DUB-PRI-YJVVG",
+    dtcm: "DUB-PRI-PPLD4",
     sleeps: "BR1 — 1 King · BR2 — 2 Singles",
     featured: true,
     available: true,
     slug: "waterfront-2bhk-princess-tower-marina",
-    description: "Welcome to your all in one and perfect retreat in the heart of Dubai Marina! This spacious 2-bedroom apartment is in the Iconic Dorra Bay Tower. -6-min walk to JBR Beach. -Dubai Marina Walk, offering direct access to the cafes, restaurants, and retail outlets. -Offers the views of the Dubai Marina yacht canal, the Arabian Gulf, the Palm Jumeirah, and the city skyline. -A state-of-the-art gymnasium. -A spacious swimming pool. -Landscaped gardens and dedicated children's play areas.",
+    description: "Welcome to the Princess Tower Dubai Marina! Our bright, modern 2BR apartment blends contemporary design cozy comfort, offering a stylish yet welcoming space. Fully furnished -Spacious Living area -A beautiful balcony to enjoy breathtaking views -Offers variety of attractions, Dubai Marina Mall, the main shopping centre for the area is just a 5-7 minute walk -The bustling JBR area in about a 10-15 minute walk - A comfortable walk only take about 5-7 minutes to Dubai metro.",
     space: {
-      kitchen: "Fully Equipped kitchen with dishwasher, fridge microwave, cooking utensils, toaster, fridge, cooktop etc.",
-      living: "Fully Furnished, Featuring 3 king-size beds, premium linens and ample storage. Living area where 2 comfort sofa cum beds. A balcony with comfortable table seating which is perfect for relaxing and enjoying the panoramic marina View. Secure underground parking.",
-      facilities: "State-of-the-art gymnasium · Spacious swimming pool · Landscaped gardens · Dedicated children's play areas · 6-min walk to JBR Beach · Dubai Marina Walk access"
+      kitchen: "Fully Equipped kitchen with dishwasher, fridge microwave, cooking utensils , toaster, fridge, cooktop etc.",
+      living: "Beautiful views in day and night. sunny room with clean bed linen and quiet and clean apartment.",
+      facilities: "- Outdoor & indoor swimming pool · - kids' play area · - State-of-the-art gym · - Snooker pool table and other board games · - 24/7 security and concierge services for added convenience and safety. · - Convenient Allocated Parking"
     },
     sleeping: [
       { room: "Bedroom 1", beds: "1 King bed" },
@@ -141,32 +144,32 @@ export const properties = [
       { room: "Bathrooms", beds: "2 full baths" }
     ],
     access: [
-      { place: "Dubai Mall", time: "19 minutes by car" },
-      { place: "Palm Jumeirah", time: "11 minutes by car" },
-      { place: "Burj Al Arab", time: "16 minutes by car" },
-      { place: "The Walk JBR", time: "9 minutes by car" },
-      { place: "Dubai International Airport (DXB)", time: "27 minutes by car" },
-      { place: "Al Maktoum International Airport", time: "31 minutes by car" }
+      { place: "Tram station", time: "3 mins walk away" },
+      { place: "Sky dive", time: "10 mins walk away" },
+      { place: "Marina walk", time: "2-3 mins walk away" },
+      { place: "Barasti beach", time: "5 mins walk away" }
     ],
     rules: [
       "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security.",
       "A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED.",
-      "Registration Details: DUB-PRI-YJVVG"
+      "Registration Details: DUB-PRI-PPLD4"
     ],
     amenities: [
       "Bathtub", "Hair dryer", "Cleaning products", "Shampoo", "Conditioner", "Body soap", "Hot water",
       "Washer", "Hangers", "Bed linens", "Iron", "Safe", "Clothing storage",
       "TV", "Exercise equipment",
       "Air conditioning", "Heating",
-      "Exterior security cameras on property", "Exterior security camera present",
-      "Wifi",
-      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Stove", "Oven", "Hot water kettle", "Toaster", "Blender", "Trash compactor",
-      "Beach access", "Guests can enjoy a nearby beach", "Lake access", "Guests can get to a lake using a path or dock",
-      "Free parking on premises", "Pool",
-      "Self check-in", "Smart lock"
+      "Exterior security cameras on property", "Exterior security camera present", "Smoke alarm",
+      "Wifi", "Dedicated workspace",
+      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Cooking basics", "Pots and pans, oil, salt and pepper", "Dishes and silverware", "Bowls, chopsticks, plates, cups, etc.", "Stove", "Oven", "Hot water kettle", "Toaster", "Blender", "Dining table",
+      "Waterfront", "Right next to a body of water", "Beach access", "Guests can enjoy a nearby beach", "Lake access", "Guests can get to a lake using a path or dock", "Private entrance", "Separate street or building entrance",
+      "Patio or balcony", "Outdoor furniture",
+      "Free parking on premises", "Pool", "Elevator", "The home or building has an elevator that's at least 52 inches deep and a doorway at least 32 inches wide", "Gym",
+      "Long term stays allowed", "Allow stay for 28 days or more", "Self check-in", "Smart lock",
+      "Housekeeping - available at extra cost"
     ],
-    guestAccess: "Commute times by car: From Dorra Bay it takes roughly 19 minutes to drive to Dubai Mall, 11 minutes to Palm Jumeirah, 16 minutes to Burj Al Arab and 9 minutes to The Walk JBR. Airport proximity: Dubai International Airport (DXB) is roughly 27 minutes' drive and the new Al Maktoum International Airport is roughly 31 minutes' drive.",
-    otherNotes: "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: DUB-PRI-YJVVG",
+    guestAccess: "This place has easy access to all parts of Dubai as all public transports are 1-3 mins away from the building. Tram station in 3 mins walk away. Sky dive is only 10 mins walk away. Marina walk is 2-3 mins walk away. Barasti beach 5 mins walk away.",
+    otherNotes: "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: DUB-PRI-PPLD4",
     reviews: [
       {
         id: 1,
@@ -234,11 +237,11 @@ export const properties = [
     featured: false,
     available: true,
     slug: "bright-spacious-2br-dorra-bay",
-    description: "Welcome to the Princess Tower Dubai Marina! Our bright, modern 2BR apartment blends contemporary design cozy comfort, offering a stylish yet welcoming space. Fully furnished -Spacious Living area -A beautiful balcony to enjoy breathtaking views -Offers variety of attractions, Dubai Marina Mall, the main shopping centre for the area is just a 5-7 minute walk -The bustling JBR area in about a 10-15 minute walk - A comfortable walk only take about 5-7 minutes to Dubai metro.",
+    description: "Welcome to your all in one and perfect retreat in the hear of Dubai Marina! This spacious 2-bedroom apartment is in the Iconic Dorra Bay Tower. -6-min walk to JBR Beach. -Dubai Marina Walk, offering direct access to the cafes, restaurants, and retail outlets. -Offers the views of the Dubai Marina yacht canal, the Arabian Gulf, the Palm Jumeirah, and the city skyline. -A state-of-the-art gymnasium. -A spacious swimming pool. -Landscaped gardens and dedicated children's play areas.",
     space: {
-      kitchen: "Fully Equipped kitchen with dishwasher, fridge microwave, cooking utensils, toaster, fridge, cooktop etc.",
-      living: "Beautiful views in day and night. sunny room with clean bed linen and quiet and clean apartment.",
-      facilities: "Outdoor & indoor swimming pool · kids' play area · State-of-the-art gym · Snooker pool table and other board games · 24/7 security and concierge services for added convenience and safety · Convenient Allocated Parking"
+      kitchen: "Fully Equipped kitchen with dishwasher, fridge microwave, cooking utensils , toaster, fridge, cooktop etc.",
+      living: "-Fully Furnished, Featuring 3 king-size beds, premium linens and ample storage. -Living area where 2 comfort sofa cum beds. -A balcony with comfortable table seating which is perfect for relaxing and enjoying the panoramic marina View. -Secure underground parking.",
+      facilities: "State-of-the-art gymnasium · Spacious swimming pool · Landscaped gardens · Dedicated children's play areas · 6-min walk to JBR Beach · Dubai Marina Walk access"
     },
     sleeping: [
       { room: "Bedroom 1", beds: "1 King bed" },
@@ -254,26 +257,22 @@ export const properties = [
     rules: [
       "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security.",
       "A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED.",
-      "Registration Details: DUB-PRI-PPLD4"
+      "Registration Details: MAR-DOR-5FBLR"
     ],
     amenities: [
       "Bathtub", "Hair dryer", "Cleaning products", "Shampoo", "Conditioner", "Body soap", "Hot water",
       "Washer", "Hangers", "Bed linens", "Iron", "Safe", "Clothing storage",
       "TV", "Exercise equipment",
       "Air conditioning", "Heating",
-      "Exterior security cameras on property", "Exterior security camera present", "Smoke alarm",
-      "Wifi", "Dedicated workspace",
-      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Cooking basics", "Pots and pans, oil, salt and pepper", "Dishes and silverware", "Bowls, chopsticks, plates, cups, etc.", "Stove", "Oven", "Hot water kettle", "Toaster", "Blender", "Dining table",
-      "Waterfront", "Right next to a body of water", "Beach access", "Guests can enjoy a nearby beach", "Lake access", "Guests can get to a lake using a path or dock",
-      "Private entrance", "Separate street or building entrance",
-      "Patio or balcony", "Outdoor furniture",
-      "Free parking on premises", "Pool", "Elevator", "The home or building has an elevator that's at least 52 inches deep and a doorway at least 32 inches wide", "Gym",
-      "Long term stays allowed", "Allow stay for 28 days or more",
-      "Self check-in", "Smart lock",
-      "Housekeeping - available at extra cost"
+      "Exterior security cameras on property", "Exterior security camera present",
+      "Wifi",
+      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Stove", "Oven", "Hot water kettle", "Toaster", "Blender", "Trash compactor",
+      "Beach access", "Guests can enjoy a nearby beach", "Lake access", "Guests can get to a lake using a path or dock",
+      "Free parking on premises", "Pool",
+      "Self check-in", "Smart lock"
     ],
-    guestAccess: "This place has easy access to all parts of Dubai as all public transports are 1-3 mins away from the building.",
-    otherNotes: "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: DUB-PRI-PPLD4",
+    guestAccess: "Commute times by car: From Dorra Bay it takes roughly 19 minutes to drive to Dubai Mall, 11 minutes to Palm Jumeirah, 16 minutes to Burj Al Arab and 9 minutes to The Walk JBR. Airport proximity: Dubai International Airport (DXB) is roughly 27 minutes' drive and the new Al Maktoum International Airport is roughly 31 minutes' drive.",
+    otherNotes: "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: MAR-DOR-5FBLR",
     reviews: [
       {
         id: 1,
@@ -410,7 +409,7 @@ export const properties = [
     title: "High Floor with Palm View 2BR in Princess Tower Marina",
     metaTitle: "High Floor 2BR Palm View | Dubai Apartments",
     metaDescription: "Stay in a high-floor 2BR apartment with stunning Palm views at Princess Tower Marina. Fully furnished, prime Dubai location, perfect for your visit.",
-    area: "Palm Jumeirah",
+    area: "Dubai Marina",
     bedrooms: 2,
     bathrooms: 2,
     guests: 4,
@@ -424,18 +423,18 @@ export const properties = [
       "./Higher floor 2br princess tower/Full kitchen/7223fb7f-3f3c-4f85-ac8f-5606f529e36a.avif",
       "./Higher floor 2br princess tower/Exterior/0691774f-41bb-45c5-9c9d-e856f66b152a.avif"
     ],
-    location: "Marina Residence 2, Palm Jumeirah",
+    location: "Princess Tower, Dubai Marina",
     highlights: ["Marina & Palm views", "Smartlock check-in", "Pool", "Gym", "Kids play", "Parking"],
-    dtcm: "PAL-MAR-IFZEN",
+    dtcm: "DUB-PRI-YJVVG",
     sleeps: "BR1 — 1 King · BR2 — 2 Singles",
     featured: true,
     available: true,
     slug: "high-floor-2br-palm-view-princess-tower",
-    description: "Nestled on the iconic Palm Jumeirah, Marina Residence 2, this exquisite two-Bedroom apartment one the most prestigious buildings on Palm Jumeirah, located at the very top of the trunk.",
+    description: "Princess Tower, located in the heart of Dubai Marina, proudly holds the title of the \"Tallest Residential Building\". This 2-bedroom apartment offers stunning views with Tram just a short walk away, exploring the city. You'll find a variety of markets beneath the tower, alongside a selection of delectable restaurants lining the marina. Marina Mall and JBR Beach are also nearby.The iconic Palm Jumeirah is just a short distance away, adding to the allure of this exceptional location.",
     space: {
-      kitchen: "Fully equipped with kitchen utensils, crockery, cutlery, toaster, kettle, and microwave for all your culinary needs.",
-      living: "Perfect for families/friends/Travellers. Two bedrooms, Fully Furnished, Featuring 3 Queen-size beds and premium linens and ample storage. Two bathrooms with essential amenities. Living area where 1 comfortable sofa bed/cozy sitting. A spacious dining table for 6 people to enjoy meals together. Spacious balcony with outdoor seating, a table, and a swing with incredible views of Marina Dubai.",
-      facilities: "Swimming Pools & Leisure · Children's Pool · 24/7 Concierge & Security · High-Speed Elevators · Direct Access to Nakheel Mall · Smart Home Technology · Central AC · Spacious Balconies · Communal Pool · Jacuzzi · Communal Gym · Car Parking · Reception · Outdoor Kids Zone · Communal Garden Area · Attached Market / Shops · In residential Facilities the building provides access to a modern gym, outdoor pool with stunning views, spa and other premium amenities for guests"
+      kitchen: "Fully Equipped kitchen with dishwasher, fridge microwave, cooking utensils , toaster, fridge, cooktop etc.",
+      living: "Beautiful views in day and night. sunny room with clean bed linen and quiet and clean apartment.",
+      facilities: "🏊‍♀️ Outdoor & indoor swimming pool · 🛝 kids' play area · 🏋️‍♂️ State-of-the-art gym · 🎱 Snooker pool table and other board games · 👮‍♂️ 24/7 security and concierge services for added convenience and safety. · 🚗 Convenient Allocated Parking"
     },
     sleeping: [
       { room: "Bedroom 1", beds: "1 King bed" },
@@ -443,32 +442,33 @@ export const properties = [
       { room: "Bathrooms", beds: "2 full baths" }
     ],
     access: [
-      { place: "Direct Access to Nakheel Mall", time: "Direct access" },
-      { place: "Beach access", time: "Nearby" },
-      { place: "Marina views", time: "From balcony" }
+      { place: "Tram station", time: "3 mins walk away" },
+      { place: "Sky dive", time: "10 mins walk away" },
+      { place: "Marina walk", time: "2-3 mins walk away" },
+      { place: "Barasti beach", time: "5 mins walk away" }
     ],
     rules: [
-      "In accordance with DTCM requirements we will need a copy of each guest passport prior to arrival for submission to the Dubai Tourism Board.",
-      "Upon arrival please present your passports to the building reception staff for verification.",
+      "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security.",
       "A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED.",
-      "Registration Details: PAL-MAR-IFZEN"
+      "Registration Details: DUB-PRI-YJVVG"
     ],
     amenities: [
-      "Bathtub", "Bidet", "Hot water",
-      "Washer", "Hangers", "Bed linens", "Iron", "Safe", "Clothing storage",
-      "TV", "Exercise equipment", "Pool table",
-      "Outdoor playground", "An outdoor area equipped with play structures for children",
-      "Air conditioning", "Heating",
-      "Exterior security cameras on property", "Exterior security camera present", "Smoke alarm", "Carbon monoxide alarm", "Fire extinguisher",
+      "Bathtub", "Hot water",
+      "Washer", "Essentials", "Towels, bed sheets, soap, and toilet paper", "Hangers", "Bed linens", "Iron", "Clothing storage: wardrobe",
+      "Exercise equipment",
+      "Crib",
+      "Air conditioning",
+      "Smoke alarm", "Carbon monoxide alarm",
       "Wifi",
-      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Cooking basics", "Pots and pans, oil, salt and pepper", "Dishes and silverware", "Bowls, chopsticks, plates, cups, etc.", "Stove", "Oven", "Hot water kettle", "Dining table",
-      "Waterfront", "Right next to a body of water", "Beach access", "Guests can enjoy a nearby beach", "Lake access", "Guests can get to a lake using a path or dock", "Private entrance", "Separate street or building entrance",
-      "Patio or balcony", "Outdoor furniture",
-      "Free parking on premises", "Pool", "Elevator", "The home or building has an elevator that's at least 52 inches deep and a doorway at least 32 inches wide", "Gym",
-      "Long term stays allowed", "Allow stay for 28 days or more", "Self check-in", "Smart lock", "Housekeeping - available at extra cost"
+      "Kitchen", "Space where guests can cook their own meals", "Refrigerator", "Microwave", "Cooking basics", "Pots and pans, oil, salt and pepper", "Dishes and silverware", "Bowls, chopsticks, plates, cups, etc.", "Stove", "Oven", "Hot water kettle", "Toaster", "Dining table",
+      "Waterfront", "Right next to a body of water", "Beach access", "Guests can enjoy a nearby beach", "Private entrance", "Separate street or building entrance",
+      "Shared patio or balcony",
+      "Free parking on premises", "Pool", "Elevator", "The home or building has an elevator that's at least 52 inches deep and a doorway at least 32 inches wide", "Shared gym in building",
+      "Long term stays allowed", "Allow stay for 28 days or more", "Self check-in", "Smart lock",
+      "Housekeeping - available at extra cost"
     ],
-    guestAccess: "Amenities: Guest will have access to the entire apartment, plus building amenities like the state-of-the-art gym, beautiful pool, and kids play area. Effortless Access: Check-in is easy with the digital door lock, the code and apartment number will be sent before your arrival, else, representative will also b there for the smooth chick in.",
-    otherNotes: "In accordance with DTCM requirements we will need a copy of each guest passport prior to arrival for submission to the Dubai Tourism Board. Upon arrival please present your passports to the building reception staff for verification. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: PAL-MAR-IFZEN",
+    guestAccess: "This place has easy access to all parts of Dubai as all public transports are 1-3 mins away from the building. Tram station in 3 mins walk away. Sky dive is only 10 mins walk away. Marina walk is 2-3 mins walk away. Barasti beach 5 mins walk away",
+    otherNotes: "As per DTCM (Dubai Tourism and Commerce Marketing) regulations, all guests are required to provide valid identification (passport or Emirates ID) prior to check-in. Additionally, to complete registration with tower security. A REFUNDABLE SECURITY DEPOSIT OF 1000 AED IS REQUIRED BEFORE ARRIVAL. THIS DEPOSIT WILL BE FULLY REFUNDED AT CHECKOUT AFTER INSPECTION OF THE APARTMENT, PROVIDED NO DAMAGE/LOST OF THE CARDS HAS OCCURRED. Registration Details: DUB-PRI-YJVVG",
     reviews: [
       { id: 1, name: "Sarah M.", rating: 5, date: "2024-01-15", comment: "Amazing location and beautiful apartment. The view of Dubai Marina was incredible! The smart lock check-in was so convenient." },
       { id: 2, name: "Ahmed K.", rating: 4, date: "2024-01-10", comment: "Great place to stay. Clean and well-equipped. The pools and gym facilities were excellent. Would definitely book again." },
