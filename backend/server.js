@@ -42,7 +42,9 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://ygiholidayhomes.com',
-  'https://ygiholidayhomes-production.up.railway.app'
+  'https://ygiholidayhomes-production.up.railway.app',
+  'https://script.google.com',
+  'https://script.googleusercontent.com'
 ];
 
 if (process.env.FRONTEND_URL) {
