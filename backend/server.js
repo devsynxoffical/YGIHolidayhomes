@@ -42,6 +42,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
   'https://ygiholidayhomes.com',
+  'https://www.ygiholidayhomes.com',
   'https://ygiholidayhomes-production.up.railway.app',
   'https://script.google.com',
   'https://script.googleusercontent.com'
@@ -62,9 +63,14 @@ app.use(cors({
       return callback(null, true);
     }
 
+    // Check if origin is in allowed list
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      // Also check for ygiholidayhomes.com variations (www and non-www)
+      if (origin.includes('ygiholidayhomes.com')) {
+        return callback(null, true);
+      }
       console.log('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }

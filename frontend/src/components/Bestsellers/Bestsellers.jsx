@@ -21,33 +21,11 @@ const Bestsellers = ({ onNavigate }) => {
     .filter(prop => prop.images && prop.images.length > 0 && prop.available)
     .slice(0, 4)
     .map(prop => ({
-      id: prop.id,
-      title: prop.title,
+      ...prop, // Spread all original property fields to preserve all flags and data
       name: prop.title,
-      price: prop.price,
       image: prop.images[0], // Use first image as main image
-      images: prop.images,
-      location: prop.location,
-      area: prop.area,
       type: "Apartments for Rent",
-      posted: "Available now",
-      bedrooms: prop.bedrooms,
-      bathrooms: prop.bathrooms,
-      guests: prop.guests,
-      beds: prop.beds,
-      rating: prop.rating,
-      highlights: prop.highlights || [],
-      dtcm: prop.dtcm,
-      sleeps: prop.sleeps,
-      featured: prop.featured || false,
-      available: prop.available,
-      slug: prop.slug,
-      description: prop.description || '',
-      area: prop.area,
-      beds: prop.beds,
-      sleeps: prop.sleeps,
-      space: prop.space || {},
-      amenities: prop.amenities || []
+      posted: "Available now"
     }));
 
   return (

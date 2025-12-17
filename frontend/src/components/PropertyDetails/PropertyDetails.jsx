@@ -14,7 +14,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     phone: ''
   });
 
-  // Calculate discount and totals
+  // Calculate discount and totals (for display only - discount will be applied in booking page)
   const calculateTotal = () => {
     if (!bookingData.checkIn || !bookingData.checkOut || !property) return 0;
     const start = new Date(bookingData.checkIn);
@@ -23,17 +23,15 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
 
     if (nights < 1) return 0;
 
-    // Apply 30% discount to all properties except ID 4
-    let pricePerNight = property.price;
-    if (property.id !== 4) {
-      pricePerNight = property.price * 0.7;
-    }
-
-    const basePrice = pricePerNight * nights;
+    // Use original price - discount will be applied on booking page
+    const basePrice = property.price * nights;
     const cleaningFee = property.excludeCleaningFee ? 0 : 400;
     const serviceFee = basePrice * 0.08;
+    const subtotal = basePrice + cleaningFee + serviceFee;
 
-    return basePrice + cleaningFee + serviceFee;
+    // Apply 30% discount for display only (if property doesn't exclude discount)
+    const discount = property.excludeDiscount ? 0 : subtotal * 0.30;
+    return subtotal - discount;
   };
 
   const handleBookingSubmit = (e) => {
@@ -46,9 +44,9 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     }
 
     // Structure data to match Payment component expectations
+    // Pass ORIGINAL price - discount will be applied in BookApartment component
     const paymentData = {
-      ...property, // Include all property details (price, title, etc.)
-      price: property.id !== 4 ? property.price * 0.7 : property.price, // Override price with discounted price if applicable
+      ...property, // Include all property details (price, title, etc.) - use original price
       bookingData: {
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
@@ -355,42 +353,57 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
             </button>
             <p className="no-charge-text">You won't be charged yet</p>
 
-            {bookingData.checkIn && bookingData.checkOut && (
-              <div className="price-calculation">
-                <div className="calc-row">
-                  <span>
-                    AED {property.id !== 4 ? (property.price * 0.7).toFixed(0) : property.price} x {Math.ceil((new Date(bookingData.checkOut) - new Date(bookingData.checkIn)) / (1000 * 60 * 60 * 24))} nights
-                  </span>
-                  <span>
-                    AED {(
-                      (property.id !== 4 ? property.price * 0.7 : property.price) *
-                      Math.ceil((new Date(bookingData.checkOut) - new Date(bookingData.checkIn)) / (1000 * 60 * 60 * 24))
-                    ).toFixed(0)}
-                  </span>
-                </div>
-                {!property.excludeCleaningFee && (
+            {bookingData.checkIn && bookingData.checkOut && (() => {
+              const nights = Math.ceil((new Date(bookingData.checkOut) - new Date(bookingData.checkIn)) / (1000 * 60 * 60 * 24));
+              const basePrice = property.price * nights;
+              const cleaningFee = property.excludeCleaningFee ? 0 : 400;
+              const taxes = basePrice * 0.08;
+              const subtotal = basePrice + cleaningFee + taxes;
+              const discount = property.excludeDiscount ? 0 : subtotal * 0.30;
+              const total = subtotal - discount;
+              
+              return (
+                <div className="price-calculation">
                   <div className="calc-row">
-                    <span>Cleaning fee</span>
-                    <span>AED 400</span>
+                    <span>
+                      AED {property.price} x {nights} nights
+                    </span>
+                    <span>
+                      AED {basePrice.toFixed(0)}
+                    </span>
                   </div>
-                )}
-                <div className="calc-row">
-                  <span>Service fee</span>
-                  <span>
-                    AED {(
-                      (property.id !== 4 ? property.price * 0.7 : property.price) *
-                      Math.ceil((new Date(bookingData.checkOut) - new Date(bookingData.checkIn)) / (1000 * 60 * 60 * 24)) *
-                      0.08
-                    ).toFixed(0)}
-                  </span>
+                  {!property.excludeCleaningFee && (
+                    <div className="calc-row">
+                      <span>Cleaning fee</span>
+                      <span>AED 400</span>
+                    </div>
+                  )}
+                  <div className="calc-row">
+                    <span>Service fee</span>
+                    <span>
+                      AED {taxes.toFixed(0)}
+                    </span>
+                  </div>
+                  {!property.excludeDiscount && discount > 0 && (
+                    <>
+                      <div className="calc-row subtotal">
+                        <span>Subtotal</span>
+                        <span>AED {subtotal.toFixed(0)}</span>
+                      </div>
+                      <div className="calc-row discount">
+                        <span>🎉 Special Offer (30% OFF)</span>
+                        <span>-AED {discount.toFixed(0)}</span>
+                      </div>
+                    </>
+                  )}
+                  <hr />
+                  <div className="calc-row total">
+                    <span>Total</span>
+                    <span>AED {total.toFixed(0)}</span>
+                  </div>
                 </div>
-                <hr />
-                <div className="calc-row total">
-                  <span>Total</span>
-                  <span>AED {calculateTotal().toFixed(0)}</span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+                                                          import React, { useState, useEffect } from 'react';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import { properties as realProperties } from '../../data/properties';
 import './BookApartment.css';
@@ -969,7 +969,7 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
               </div>
             )}
             <div className="summary-line">
-                    <span>Service charges (8%)</span>
+                    <span>Service charges</span>
                     <PriceDisplay price={pricing.taxes} size="small" />
             </div>
 
