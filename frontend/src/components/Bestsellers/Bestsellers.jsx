@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import ProductCard from '../ProductCard/ProductCard';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
-import { properties } from '../../data/properties';
+import { useProperties } from '../../contexts/PropertiesContext';
 import './Bestsellers.css';
 
 const Bestsellers = ({ onNavigate }) => {
+  const { properties } = useProperties();
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('featured');
 

@@ -149,6 +149,10 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         throw new Error(data.error || 'Failed to save property');
       }
 
+      // Show success message
+      alert(`✅ Property ${property ? 'updated' : 'created'} successfully!\n\n` +
+        `✅ Changes are now live! The frontend automatically fetches from the API, so your changes will appear on the website immediately after refresh.`);
+      
       onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to save property');

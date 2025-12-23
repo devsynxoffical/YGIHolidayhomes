@@ -368,7 +368,19 @@ const initializePropertiesFile = async () => {
 // Initialize on server start
 initializePropertiesFile();
 
-// Get all properties
+// Public API endpoint for frontend (no authentication required)
+app.get('/api/properties', async (req, res) => {
+  try {
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    res.json({ success: true, properties });
+  } catch (error) {
+    console.error('Error reading properties:', error);
+    res.status(500).json({ error: 'Failed to read properties' });
+  }
+});
+
+// Get all properties (admin endpoint)
 app.get('/api/admin/properties', authenticateAdmin, async (req, res) => {
   try {
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
@@ -526,6 +538,39 @@ app.post('/api/admin/sync-properties', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error syncing properties:', error);
     res.status(500).json({ error: 'Failed to sync properties' });
+  }
+});
+
+// Sync backend properties.json to frontend properties.js (only works locally, not on Railway)
+app.post('/api/admin/sync-to-frontend', authenticateAdmin, async (req, res) => {
+  try {
+    // Check if we're in a local environment where frontend files are accessible
+    const frontendPath = path.join(__dirname, '..', 'frontend', 'src', 'data', 'properties.js');
+    
+    try {
+      await fs.access(frontendPath);
+    } catch {
+      return res.status(404).json({ 
+        error: 'Frontend files not accessible. This feature only works in local development. On Railway, the frontend fetches properties from the API automatically.',
+        note: 'No sync needed - frontend uses /api/properties endpoint'
+      });
+    }
+    
+    const syncToFrontend = require('./sync-to-frontend');
+    const result = await syncToFrontend();
+    
+    res.json({ 
+      success: true, 
+      message: `Successfully synced ${result.count} properties to frontend`,
+      count: result.count 
+    });
+  } catch (error) {
+    console.error('Error syncing to frontend:', error);
+    res.status(500).json({ 
+      error: 'Failed to sync to frontend',
+      message: error.message,
+      note: 'On Railway, frontend automatically fetches from /api/properties - no sync needed'
+    });
   }
 });
 

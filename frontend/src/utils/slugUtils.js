@@ -25,7 +25,7 @@ export const generatePropertyPhotosSlug = (property) => {
   return createSlug(`${title}-${id}-photos`);
 };
 
-import { properties } from '../data/properties';
+import { properties as fallbackProperties } from '../data/properties';
 
 /**
  * Route mappings with slugs
@@ -43,6 +43,17 @@ export const ROUTE_SLUGS = {
   'property-photos': 'photos'
 };
 
+// Store properties from context (will be set by App component)
+let currentProperties = fallbackProperties;
+
+/**
+ * Set properties from context (called by App component)
+ * @param {Array} properties - The properties array
+ */
+export const setProperties = (properties) => {
+  currentProperties = properties || fallbackProperties;
+};
+
 /**
  * Get page from slug
  * @param {string} slug - The URL slug
@@ -56,7 +67,7 @@ export const getPageFromSlug = (slug) => {
   }
 
   // Check if it's a property slug
-  const property = properties.find(p => p.slug === slug);
+  const property = currentProperties.find(p => p.slug === slug);
   if (property) {
     return 'property-details';
   }
@@ -70,7 +81,7 @@ export const getPageFromSlug = (slug) => {
  * @returns {Object|null} - The property object or null
  */
 export const getPropertyBySlug = (slug) => {
-  return properties.find(p => p.slug === slug) || null;
+  return currentProperties.find(p => p.slug === slug) || null;
 };
 
 /**

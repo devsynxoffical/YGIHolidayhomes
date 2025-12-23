@@ -31,15 +31,23 @@ import {
   updateUrl,
   getCurrentSlug,
   getSearchParamsFromUrl,
-  getPropertyBySlug
+  getPropertyBySlug,
+  setProperties as setSlugUtilsProperties
 } from './utils/slugUtils';
+import { useProperties } from './contexts/PropertiesContext';
 import './App.css';
 
 function App() {
+  const { properties } = useProperties();
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [bookingData, setBookingData] = useState(null);
   const [searchParams, setSearchParams] = useState(null);
+
+  // Update slugUtils with current properties whenever they change
+  useEffect(() => {
+    setSlugUtilsProperties(properties);
+  }, [properties]);
 
   // Initialize page from URL slug on component mount
   useEffect(() => {

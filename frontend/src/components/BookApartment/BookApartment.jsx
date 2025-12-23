@@ -1,9 +1,10 @@
-                                                          import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
-import { properties as realProperties } from '../../data/properties';
+import { useProperties } from '../../contexts/PropertiesContext';
 import './BookApartment.css';
 
 const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) => {
+  const { properties: allProperties } = useProperties();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -21,9 +22,11 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
 
   // Initial load - always load all properties first
   useEffect(() => {
-    setProperties(realProperties);
-    setLoading(false);
-  }, []);
+    if (allProperties && allProperties.length > 0) {
+      setProperties(allProperties);
+      setLoading(false);
+    }
+  }, [allProperties]);
 
   // Handle search parameters when they change
   useEffect(() => {
@@ -31,14 +34,14 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
       applySearchFilters(searchParams);
     } else {
       // Reset to all properties if no search params
-      setProperties(realProperties);
+      setProperties(allProperties);
       setSearchResults(null);
     }
-  }, [searchParams]);
+  }, [searchParams, allProperties]);
 
   // Apply search filters from SearchFilter component
   const applySearchFilters = (filters) => {
-    let filteredProperties = [...realProperties];
+    let filteredProperties = [...allProperties];
 
     // Filter by property type
     if (filters.propertyType && filters.propertyType !== 'All Types') {

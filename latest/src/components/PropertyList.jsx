@@ -1,11 +1,39 @@
 import { useState, useEffect } from 'react';
 import './PropertyList.css';
 
+// Website URL where images are hosted
+const WEBSITE_URL = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+
+// Helper function to convert relative image paths to absolute URLs
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return '';
+  
+  // If already an absolute URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // Convert relative paths (./path) to absolute paths (/path)
+  let cleanPath = imagePath;
+  if (imagePath.startsWith('./')) {
+    cleanPath = imagePath.substring(1); // Remove ./
+  }
+  
+  // Ensure path starts with /
+  if (!cleanPath.startsWith('/')) {
+    cleanPath = '/' + cleanPath;
+  }
+  
+  // Return full URL (browser will handle spaces in URLs)
+  return `${WEBSITE_URL}${cleanPath}`;
+};
+
 function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchProperties();
@@ -68,6 +96,49 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
     }
   };
 
+  const handleSyncToFrontend = async () => {
+    const message = `🔄 Sync to Frontend\n\n` +
+      `Note: This feature only works in local development.\n\n` +
+      `On Railway (production):\n` +
+      `- Frontend automatically fetches properties from the API\n` +
+      `- No sync needed - changes appear immediately\n` +
+      `- The /api/properties endpoint serves live data\n\n` +
+      `Continue anyway?`;
+    
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/admin/sync-to-frontend`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          alert(`ℹ️ ${data.error}\n\n${data.note || ''}\n\n✅ Your frontend is already fetching from the API, so no sync is needed!`);
+        } else {
+          throw new Error(data.error || 'Failed to sync to frontend');
+        }
+      } else {
+        alert(`✅ Successfully synced ${data.count} properties to frontend!\n\nNote: You need to commit and push the updated frontend/src/data/properties.js file to see changes on the live website.`);
+      }
+    } catch (err) {
+      alert(`⚠️ Sync not available on Railway\n\n` +
+        `This is normal! Your frontend automatically fetches properties from the API.\n\n` +
+        `✅ Changes made in admin panel appear on website immediately - no sync needed!`);
+      console.error('Error syncing to frontend:', err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="property-list-container">
@@ -80,7 +151,17 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
     <div className="property-list-container">
       <div className="list-header">
         <h1>Properties</h1>
-        <button className="add-btn" onClick={onAdd}>+ Add New Property</button>
+        <div className="header-actions">
+          <button 
+            className="sync-btn" 
+            onClick={handleSyncToFrontend}
+            disabled={syncing}
+            title="Sync to frontend file (local dev only). On Railway, frontend uses API automatically."
+          >
+            {syncing ? 'Syncing...' : '🔄 Sync (Local Only)'}
+          </button>
+          <button className="add-btn" onClick={onAdd}>+ Add New Property</button>
+        </div>
       </div>
 
       {error && (
@@ -113,12 +194,16 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
               <div className="property-image">
                 {property.images && property.images.length > 0 ? (
                   <img 
-                    src={property.images[0].startsWith('./') 
-                      ? `/src/${property.images[0].substring(2)}` 
-                      : property.images[0]} 
+                    src={getImageUrl(property.images[0])}
                     alt={property.title}
+                    loading="lazy"
                     onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                      // Try alternative image or show placeholder
+                      if (property.images.length > 1) {
+                        e.target.src = getImageUrl(property.images[1]);
+                      } else {
+                        e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                      }
                     }}
                   />
                 ) : (
