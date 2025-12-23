@@ -505,6 +505,30 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
+// Sync properties from provided data (for initial setup)
+app.post('/api/admin/sync-properties', authenticateAdmin, async (req, res) => {
+  try {
+    const { properties } = req.body;
+    
+    if (!Array.isArray(properties)) {
+      return res.status(400).json({ error: 'Properties must be an array' });
+    }
+    
+    await ensureDataDirectory();
+    await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
+    
+    console.log(`✅ Synced ${properties.length} properties to properties.json`);
+    res.json({ 
+      success: true, 
+      message: `Successfully synced ${properties.length} properties`,
+      count: properties.length 
+    });
+  } catch (error) {
+    console.error('Error syncing properties:', error);
+    res.status(500).json({ error: 'Failed to sync properties' });
+  }
+});
+
 // Webhook endpoint for Stripe events
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const sig = req.headers['stripe-signature'];

@@ -5,7 +5,7 @@ import PropertyList from './components/PropertyList';
 import PropertyForm from './components/PropertyForm';
 import './App.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

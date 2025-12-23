@@ -21,15 +21,23 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch properties');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('Properties API response:', data);
       setProperties(data.properties || []);
       setError('');
+      
+      if (!data.properties || data.properties.length === 0) {
+        setError('No properties found. The properties.json file may be empty. You can add properties using the "Add Property" button, or sync properties from the frontend.');
+      }
     } catch (err) {
-      setError('Failed to load properties. Make sure the backend is running.');
+      const errorMsg = err.message || 'Failed to load properties';
+      setError(`Error: ${errorMsg}. Make sure the backend is running and accessible.`);
       console.error('Error fetching properties:', err);
+      console.error('API URL:', `${apiBaseUrl}/api/admin/properties`);
     } finally {
       setLoading(false);
     }
@@ -75,11 +83,27 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
         <button className="add-btn" onClick={onAdd}>+ Add New Property</button>
       </div>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <div className="error-banner">
+          {error}
+          <br />
+          <small style={{ marginTop: '10px', display: 'block' }}>
+            💡 Tip: Check the browser console (F12) for more details. 
+            If properties.json is empty, you can add properties manually or sync from the frontend.
+          </small>
+        </div>
+      )}
 
       {properties.length === 0 ? (
         <div className="empty-state">
           <p>No properties found.</p>
+          <p className="empty-hint">
+            The properties.json file is empty. You can either:
+            <br />
+            1. Add properties manually using the "Add Property" button below
+            <br />
+            2. Sync properties from the frontend (if you have access to the frontend properties.js file)
+          </p>
           <button onClick={onAdd}>Add Your First Property</button>
         </div>
       ) : (

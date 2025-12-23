@@ -21,10 +21,14 @@ npm install
 2. Set up environment variables (optional):
 Create a `.env` file in the root directory:
 ```
-VITE_API_URL=http://localhost:5000
+# For production (Railway backend):
+VITE_API_URL=https://ygiholidayhomes-production.up.railway.app
+
+# For local development:
+# VITE_API_URL=http://localhost:5000
 ```
 
-3. Make sure the backend server is running on port 5000 (or update the API URL).
+**Note**: By default, the admin panel is configured to use the Railway backend at `https://ygiholidayhomes-production.up.railway.app`. If you're running the backend locally, create a `.env` file with `VITE_API_URL=http://localhost:5000`.
 
 4. Start the development server:
 ```bash
@@ -94,4 +98,5 @@ The built files will be in the `dist` folder.
 
 - Properties are stored in `backend/data/properties.json`
 - Make sure to sync properties from the frontend if needed using the sync script
-- The admin panel requires the backend server to be running
+- The admin panel is configured to connect to the Railway backend by default
+- For local development, set `VITE_API_URL=http://localhost:5000` in your `.env` file
