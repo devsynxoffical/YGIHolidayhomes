@@ -32,6 +32,15 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const fs = require('fs').promises;
 const path = require('path');
+const multer = require('multer');
+const { connectMongoDB, getBucket, getDB } = require('./config/mongodb');
+const { ObjectId } = require('mongodb');
+
+// Configure multer for file uploads (memory storage for GridFS)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -81,6 +90,10 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Initialize MongoDB connection
+connectMongoDB().catch(console.error);
 
 // Health check endpoint - should be accessible without CORS issues
 app.get('/health', (req, res) => {
@@ -321,7 +334,7 @@ app.post('/log-sheets-submission', async (req, res) => {
 // ==================== ADMIN PANEL API ENDPOINTS ====================
 
 // Simple authentication middleware (in production, use JWT or sessions)
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'; // Change this in production
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const authenticateAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -368,6 +381,169 @@ const initializePropertiesFile = async () => {
 // Initialize on server start
 initializePropertiesFile();
 
+// ==================== IMAGE MANAGEMENT ENDPOINTS ====================
+
+// Upload image to MongoDB GridFS
+app.post('/api/images/upload', authenticateAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const bucket = await getBucket();
+    const filename = req.body.filename || req.file.originalname || `image_${Date.now()}`;
+    const propertyId = req.body.propertyId || null;
+    const category = req.body.category || 'general';
+
+    // Create upload stream
+    const uploadStream = bucket.openUploadStream(filename, {
+      metadata: {
+        propertyId,
+        category,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+
+    // Write file buffer to GridFS
+    uploadStream.end(req.file.buffer);
+
+    uploadStream.on('finish', () => {
+      res.json({
+        success: true,
+        imageId: uploadStream.id.toString(),
+        filename: uploadStream.filename,
+        url: `/api/images/${uploadStream.id}`
+      });
+    });
+
+    uploadStream.on('error', (error) => {
+      console.error('Error uploading image:', error);
+      res.status(500).json({ error: 'Failed to upload image' });
+    });
+  } catch (error) {
+    console.error('Error in image upload:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Get image from MongoDB GridFS
+app.get('/api/images/:imageId', async (req, res) => {
+  try {
+    const bucket = await getBucket();
+    const imageId = new ObjectId(req.params.imageId);
+
+    // Check if file exists
+    const files = await bucket.find({ _id: imageId }).toArray();
+    if (files.length === 0) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const file = files[0];
+    
+    // Set appropriate headers
+    res.set({
+      'Content-Type': file.metadata?.mimeType || 'image/jpeg',
+      'Content-Length': file.length,
+      'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
+    });
+
+    // Stream the image
+    const downloadStream = bucket.openDownloadStream(imageId);
+    downloadStream.pipe(res);
+
+    downloadStream.on('error', (error) => {
+      console.error('Error streaming image:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to retrieve image' });
+      }
+    });
+  } catch (error) {
+    console.error('Error retrieving image:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to retrieve image' });
+    }
+  }
+});
+
+// Get image by filename
+app.get('/api/images/filename/:filename', async (req, res) => {
+  try {
+    const bucket = await getBucket();
+    const filename = decodeURIComponent(req.params.filename);
+
+    const files = await bucket.find({ filename }).sort({ uploadDate: -1 }).limit(1).toArray();
+    if (files.length === 0) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const file = files[0];
+    res.set({
+      'Content-Type': file.metadata?.mimeType || 'image/jpeg',
+      'Content-Length': file.length,
+      'Cache-Control': 'public, max-age=31536000'
+    });
+
+    const downloadStream = bucket.openDownloadStream(file._id);
+    downloadStream.pipe(res);
+
+    downloadStream.on('error', (error) => {
+      console.error('Error streaming image:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to retrieve image' });
+      }
+    });
+  } catch (error) {
+    console.error('Error retrieving image by filename:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to retrieve image' });
+    }
+  }
+});
+
+// List all images (admin only)
+app.get('/api/admin/images', authenticateAdmin, async (req, res) => {
+  try {
+    const bucket = await getBucket();
+    const propertyId = req.query.propertyId;
+    
+    let query = {};
+    if (propertyId) {
+      query['metadata.propertyId'] = propertyId;
+    }
+
+    const files = await bucket.find(query).toArray();
+    const images = files.map(file => ({
+      id: file._id.toString(),
+      filename: file.filename,
+      url: `/api/images/${file._id}`,
+      size: file.length,
+      uploadedAt: file.uploadDate,
+      metadata: file.metadata
+    }));
+
+    res.json({ success: true, images });
+  } catch (error) {
+    console.error('Error listing images:', error);
+    res.status(500).json({ error: 'Failed to list images' });
+  }
+});
+
+// Delete image (admin only)
+app.delete('/api/admin/images/:imageId', authenticateAdmin, async (req, res) => {
+  try {
+    const bucket = await getBucket();
+    const imageId = new ObjectId(req.params.imageId);
+
+    await bucket.delete(imageId);
+    res.json({ success: true, message: 'Image deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
+  }
+});
+
 // Public API endpoint for frontend (no authentication required)
 app.get('/api/properties', async (req, res) => {
   try {
@@ -377,6 +553,78 @@ app.get('/api/properties', async (req, res) => {
   } catch (error) {
     console.error('Error reading properties:', error);
     res.status(500).json({ error: 'Failed to read properties' });
+  }
+});
+
+// Admin booking statistics endpoint
+app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
+  try {
+    // Get properties count
+    const propertiesData = await fs.readFile(PROPERTIES_FILE, 'utf8').catch(() => '[]');
+    const properties = JSON.parse(propertiesData);
+    const totalProperties = Array.isArray(properties) ? properties.length : 0;
+    const availableProperties = Array.isArray(properties) 
+      ? properties.filter(p => p.available !== false).length 
+      : 0;
+
+    // Get booking statistics from Stripe
+    let totalBookings = 0;
+    let currentBookings = 0;
+    let totalRevenue = 0;
+    let monthlyRevenue = 0;
+    
+    try {
+      // Get all payment intents (succeeded ones are bookings)
+      const paymentIntents = await stripe.paymentIntents.list({
+        limit: 100,
+      });
+
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      totalBookings = paymentIntents.data.filter(pi => pi.status === 'succeeded').length;
+      
+      // Calculate current bookings (check-ins in the future or recent past)
+      // For now, we'll estimate based on recent payments
+      const recentPayments = paymentIntents.data.filter(pi => {
+        if (pi.status !== 'succeeded') return false;
+        const created = new Date(pi.created * 1000);
+        const daysSince = (now - created) / (1000 * 60 * 60 * 24);
+        return daysSince <= 30; // Bookings in last 30 days
+      });
+      currentBookings = recentPayments.length;
+
+      // Calculate revenue
+      paymentIntents.data.forEach(pi => {
+        if (pi.status === 'succeeded') {
+          const amount = pi.amount / 100; // Convert from cents
+          totalRevenue += amount;
+          
+          const created = new Date(pi.created * 1000);
+          if (created >= startOfMonth) {
+            monthlyRevenue += amount;
+          }
+        }
+      });
+    } catch (stripeError) {
+      console.warn('Could not fetch Stripe statistics:', stripeError.message);
+      // Continue with zero values if Stripe fails
+    }
+
+    res.json({
+      success: true,
+      statistics: {
+        totalProperties,
+        availableProperties,
+        totalBookings,
+        currentBookings,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 

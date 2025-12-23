@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import DashboardView from './components/DashboardView';
 import PropertyList from './components/PropertyList';
 import PropertyForm from './components/PropertyForm';
 import './App.css';
@@ -66,17 +67,11 @@ function App() {
       
       <main className="main-content">
         {currentView === 'dashboard' && (
-          <div className="dashboard-welcome">
-            <h1>Welcome to YGI Holiday Homes Admin Panel</h1>
-            <p>Manage your properties, view bookings, and control your website from here.</p>
-            <div className="dashboard-stats">
-              <div className="stat-card">
-                <h3>Properties</h3>
-                <p>Manage all your rental properties</p>
-                <button onClick={() => setCurrentView('list')}>View Properties</button>
-              </div>
-            </div>
-      </div>
+          <DashboardView 
+            apiBaseUrl={API_BASE_URL}
+            token={token}
+            onViewChange={setCurrentView}
+          />
         )}
         
         {currentView === 'list' && (

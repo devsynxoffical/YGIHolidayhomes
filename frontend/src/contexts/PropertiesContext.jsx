@@ -15,13 +15,25 @@ export const PropertiesProvider = ({ children }) => {
     const fetchProperties = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/properties`);
+        console.log(`🔄 Fetching properties from: ${API_BASE_URL}/api/properties`);
+        
+        const response = await fetch(`${API_BASE_URL}/api/properties`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('API Response status:', response.status, response.statusText);
         
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log('API Response data:', data);
         
         if (data.success && data.properties && data.properties.length > 0) {
           setProperties(data.properties);
@@ -33,7 +45,12 @@ export const PropertiesProvider = ({ children }) => {
           setProperties(fallbackProperties);
         }
       } catch (err) {
-        console.warn('⚠️ Failed to fetch properties from API, using fallback:', err.message);
+        console.error('❌ Failed to fetch properties from API:', err);
+        console.error('Error details:', {
+          message: err.message,
+          stack: err.stack,
+          apiUrl: `${API_BASE_URL}/api/properties`
+        });
         // Use fallback properties if API fails
         setProperties(fallbackProperties);
         setError(err.message);

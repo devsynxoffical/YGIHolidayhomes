@@ -21,44 +21,26 @@
 
 .list-header h1 {
   margin: 0;
-  color: #2c3e50;
+  color: var(--primary-dark);
+  font-weight: 600;
 }
 
 .add-btn {
-  background: #27ae60;
+  background: var(--primary-gradient);
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
-  transition: background 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(15, 169, 104, 0.3);
 }
 
 .add-btn:hover {
-  background: #229954;
-}
-
-.sync-btn {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: background 0.3s;
-}
-
-.sync-btn:hover:not(:disabled) {
-  background: #2980b9;
-}
-
-.sync-btn:disabled {
-  background: #95a5a6;
-  cursor: not-allowed;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(15, 169, 104, 0.4);
 }
 
 .error-banner {
@@ -103,17 +85,21 @@
 }
 
 .empty-state button {
-  background: #3498db;
+  background: var(--primary-gradient);
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(15, 169, 104, 0.3);
 }
 
 .empty-state button:hover {
-  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(15, 169, 104, 0.4);
 }
 
 .properties-grid {
@@ -132,7 +118,8 @@
 
 .property-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-medium);
+  border-color: rgba(15, 169, 104, 0.2);
 }
 
 .property-image {
@@ -165,12 +152,13 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #f39c12;
-  color: white;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: var(--primary-dark);
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
 }
 
 .unavailable-badge {
@@ -191,8 +179,9 @@
 
 .property-info h3 {
   margin: 0 0 15px 0;
-  color: #2c3e50;
+  color: var(--primary-dark);
   font-size: 18px;
+  font-weight: 600;
   line-height: 1.4;
 }
 
@@ -202,11 +191,11 @@
   gap: 8px;
   margin-bottom: 15px;
   font-size: 14px;
-  color: #666;
+  color: var(--muted);
 }
 
 .property-description {
-  color: #666;
+  color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
@@ -214,7 +203,7 @@
 
 .property-actions {
   padding: 15px 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--divider);
   display: flex;
   gap: 10px;
 }
@@ -223,29 +212,35 @@
   flex: 1;
   padding: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.3s;
+  transition: all 0.3s ease;
+  font-family: var(--font-family);
 }
 
 .edit-btn {
-  background: #3498db;
+  background: var(--primary-gradient);
   color: white;
+  box-shadow: 0 2px 8px rgba(15, 169, 104, 0.2);
 }
 
 .edit-btn:hover {
-  background: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 169, 104, 0.3);
 }
 
 .delete-btn {
   background: #e74c3c;
   color: white;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
 }
 
 .delete-btn:hover {
   background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
 @media (max-width: 768px) {

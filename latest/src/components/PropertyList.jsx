@@ -33,7 +33,6 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchProperties();
@@ -59,7 +58,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       setError('');
       
       if (!data.properties || data.properties.length === 0) {
-        setError('No properties found. The properties.json file may be empty. You can add properties using the "Add Property" button, or sync properties from the frontend.');
+        setError('No properties found. The properties.json file may be empty. You can add properties using the "Add Property" button.');
       }
     } catch (err) {
       const errorMsg = err.message || 'Failed to load properties';
@@ -96,48 +95,6 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
     }
   };
 
-  const handleSyncToFrontend = async () => {
-    const message = `🔄 Sync to Frontend\n\n` +
-      `Note: This feature only works in local development.\n\n` +
-      `On Railway (production):\n` +
-      `- Frontend automatically fetches properties from the API\n` +
-      `- No sync needed - changes appear immediately\n` +
-      `- The /api/properties endpoint serves live data\n\n` +
-      `Continue anyway?`;
-    
-    if (!window.confirm(message)) {
-      return;
-    }
-
-    setSyncing(true);
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/admin/sync-to-frontend`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          alert(`ℹ️ ${data.error}\n\n${data.note || ''}\n\n✅ Your frontend is already fetching from the API, so no sync is needed!`);
-        } else {
-          throw new Error(data.error || 'Failed to sync to frontend');
-        }
-      } else {
-        alert(`✅ Successfully synced ${data.count} properties to frontend!\n\nNote: You need to commit and push the updated frontend/src/data/properties.js file to see changes on the live website.`);
-      }
-    } catch (err) {
-      alert(`⚠️ Sync not available on Railway\n\n` +
-        `This is normal! Your frontend automatically fetches properties from the API.\n\n` +
-        `✅ Changes made in admin panel appear on website immediately - no sync needed!`);
-      console.error('Error syncing to frontend:', err);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -152,14 +109,6 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       <div className="list-header">
         <h1>Properties</h1>
         <div className="header-actions">
-          <button 
-            className="sync-btn" 
-            onClick={handleSyncToFrontend}
-            disabled={syncing}
-            title="Sync to frontend file (local dev only). On Railway, frontend uses API automatically."
-          >
-            {syncing ? 'Syncing...' : '🔄 Sync (Local Only)'}
-          </button>
           <button className="add-btn" onClick={onAdd}>+ Add New Property</button>
         </div>
       </div>
@@ -170,7 +119,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
           <br />
           <small style={{ marginTop: '10px', display: 'block' }}>
             💡 Tip: Check the browser console (F12) for more details. 
-            If properties.json is empty, you can add properties manually or sync from the frontend.
+            If properties.json is empty, you can add properties manually using the "Add Property" button.
           </small>
         </div>
       )}
@@ -183,7 +132,6 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
             <br />
             1. Add properties manually using the "Add Property" button below
             <br />
-            2. Sync properties from the frontend (if you have access to the frontend properties.js file)
           </p>
           <button onClick={onAdd}>Add Your First Property</button>
         </div>

@@ -1,8 +1,8 @@
 .dashboard-nav {
-  background: #2c3e50;
+  background: var(--primary-gradient);
   color: white;
   padding: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -16,24 +16,40 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.nav-header h2 {
+.nav-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.nav-logo-text {
   margin: 0;
   font-size: 20px;
+  font-weight: 600;
 }
 
 .logout-btn {
-  background: #e74c3c;
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 8px 16px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .logout-btn:hover {
-  background: #c0392b;
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 .nav-menu {
@@ -64,8 +80,8 @@
 }
 
 .nav-menu button.active {
-  background: rgba(255, 255, 255, 0.1);
-  border-bottom-color: #3498db;
+  background: rgba(255, 255, 255, 0.15);
+  border-bottom-color: #0FA968;
 }
 
 .dashboard-welcome {
@@ -75,8 +91,9 @@
 }
 
 .dashboard-welcome h1 {
-  color: #2c3e50;
+  color: var(--primary-dark);
   margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .dashboard-welcome p {
@@ -96,13 +113,20 @@
   background: white;
   padding: 25px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #3498db;
+  box-shadow: var(--shadow-subtle);
+  border-left: 4px solid var(--primary);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
 }
 
 .stat-card h3 {
   margin: 0 0 10px 0;
-  color: #2c3e50;
+  color: var(--primary-dark);
+  font-weight: 600;
 }
 
 .stat-card p {
@@ -112,17 +136,83 @@
 }
 
 .stat-card button {
-  background: #3498db;
+  background: var(--primary-gradient);
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.3s;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(15, 169, 104, 0.2);
 }
 
 .stat-card button:hover {
-  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(15, 169, 104, 0.3);
+}
+
+.dashboard-header {
+  margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+  color: var(--primary-dark);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.dashboard-header p {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+}
+
+.error-banner {
+  background: #fee;
+  color: #c33;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #c33;
+}
+
+.stat-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.stat-content {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 10px 0;
+}
+
+.stat-description {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-actions button {
+  width: 100%;
 }
 

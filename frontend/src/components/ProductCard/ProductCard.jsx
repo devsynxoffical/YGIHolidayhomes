@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
+import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import './ProductCard.css';
 
 const ProductCard = ({ product, onNavigate }) => {
@@ -31,9 +32,17 @@ const ProductCard = ({ product, onNavigate }) => {
     <div className="product-card clickable" onClick={handleCardClick}>
       <div className="product-image-container">
         <img 
-          src={product.image} 
+          src={getImageUrlWithFallback(product.image || (product.images && product.images[0]))} 
           alt={product.name}
           className="product-image"
+          onError={(e) => {
+            // Fallback to local path if MongoDB fails
+            const fallback = product.image || (product.images && product.images[0]);
+            if (fallback && !fallback.startsWith('http')) {
+              const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+              e.target.src = `${websiteUrl}/${fallback.replace(/^\.\//, '')}`;
+            }
+          }}
         />
         
         {/* Featured Badge */}

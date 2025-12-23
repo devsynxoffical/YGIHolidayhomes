@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import './PropertyDetails.css';
 
 const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
@@ -75,7 +76,18 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
         <div className="property-gallery-grid">
           <div className="main-image">
             {property.images && property.images.length > 0 ? (
-              <img src={property.images[0]} alt={property.title} />
+              <img 
+                src={getImageUrlWithFallback(property.images[0])} 
+                alt={property.title}
+                onError={(e) => {
+                  // Fallback to local path if MongoDB fails
+                  const fallback = property.images[0];
+                  if (fallback && !fallback.startsWith('http')) {
+                    const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                    e.target.src = `${websiteUrl}/${fallback.replace(/^\.\//, '')}`;
+                  }
+                }}
+              />
             ) : (
               <div className="placeholder-image">No Image Available</div>
             )}
@@ -87,7 +99,17 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
           <div className="side-images">
             {property.images && property.images.slice(1, 5).map((img, index) => (
               <div key={index} className="side-image-item">
-                <img src={img} alt={`View ${index + 1}`} />
+                <img 
+                  src={getImageUrlWithFallback(img)} 
+                  alt={`View ${index + 1}`}
+                  onError={(e) => {
+                    // Fallback to local path if MongoDB fails
+                    if (img && !img.startsWith('http')) {
+                      const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                      e.target.src = `${websiteUrl}/${img.replace(/^\.\//, '')}`;
+                    }
+                  }}
+                />
               </div>
             ))}
           </div>
