@@ -30,6 +30,8 @@ const stripe = require('stripe')(STRIPE_SECRET_KEY);
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const fs = require('fs').promises;
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +42,7 @@ app.use(morgan('combined'));
 // Define allowed origins
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:3000',
   'https://ygiholidayhomes.com',
   'https://www.ygiholidayhomes.com',
@@ -312,6 +315,193 @@ app.post('/log-sheets-submission', async (req, res) => {
   } catch (error) {
     console.error('Error logging Google Sheets submission:', error);
     res.status(500).json({ error: 'Failed to log submission' });
+  }
+});
+
+// ==================== ADMIN PANEL API ENDPOINTS ====================
+
+// Simple authentication middleware (in production, use JWT or sessions)
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'; // Change this in production
+
+const authenticateAdmin = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+  
+  const token = authHeader.substring(7);
+  
+  if (token !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+  
+  next();
+};
+
+// Properties file path
+const PROPERTIES_FILE = path.join(__dirname, 'data', 'properties.json');
+
+// Ensure data directory exists
+const ensureDataDirectory = async () => {
+  const dataDir = path.dirname(PROPERTIES_FILE);
+  try {
+    await fs.mkdir(dataDir, { recursive: true });
+  } catch (error) {
+    console.error('Error creating data directory:', error);
+  }
+};
+
+// Initialize properties file from frontend if it doesn't exist
+const initializePropertiesFile = async () => {
+  try {
+    await ensureDataDirectory();
+    await fs.access(PROPERTIES_FILE);
+    // File exists, do nothing
+  } catch (error) {
+    // File doesn't exist, create empty array
+    await fs.writeFile(PROPERTIES_FILE, JSON.stringify([], null, 2));
+    console.log('✅ Created properties.json file');
+  }
+};
+
+// Initialize on server start
+initializePropertiesFile();
+
+// Get all properties
+app.get('/api/admin/properties', authenticateAdmin, async (req, res) => {
+  try {
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    res.json({ success: true, properties });
+  } catch (error) {
+    console.error('Error reading properties:', error);
+    res.status(500).json({ error: 'Failed to read properties' });
+  }
+});
+
+// Get single property by ID
+app.get('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    const property = properties.find(p => p.id === parseInt(id));
+    
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    
+    res.json({ success: true, property });
+  } catch (error) {
+    console.error('Error reading property:', error);
+    res.status(500).json({ error: 'Failed to read property' });
+  }
+});
+
+// Create new property
+app.post('/api/admin/properties', authenticateAdmin, async (req, res) => {
+  try {
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    
+    // Generate new ID
+    const newId = properties.length > 0 
+      ? Math.max(...properties.map(p => p.id)) + 1 
+      : 1;
+    
+    const newProperty = {
+      ...req.body,
+      id: newId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    properties.push(newProperty);
+    await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
+    
+    console.log('✅ Property created:', newProperty.id);
+    res.json({ success: true, property: newProperty });
+  } catch (error) {
+    console.error('Error creating property:', error);
+    res.status(500).json({ error: 'Failed to create property' });
+  }
+});
+
+// Update property
+app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    
+    const index = properties.findIndex(p => p.id === parseInt(id));
+    
+    if (index === -1) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    
+    properties[index] = {
+      ...properties[index],
+      ...req.body,
+      id: parseInt(id),
+      updatedAt: new Date().toISOString()
+    };
+    
+    await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
+    
+    console.log('✅ Property updated:', id);
+    res.json({ success: true, property: properties[index] });
+  } catch (error) {
+    console.error('Error updating property:', error);
+    res.status(500).json({ error: 'Failed to update property' });
+  }
+});
+
+// Delete property
+app.delete('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    
+    const index = properties.findIndex(p => p.id === parseInt(id));
+    
+    if (index === -1) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+    
+    const deletedProperty = properties.splice(index, 1)[0];
+    await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
+    
+    console.log('✅ Property deleted:', id);
+    res.json({ success: true, message: 'Property deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting property:', error);
+    res.status(500).json({ error: 'Failed to delete property' });
+  }
+});
+
+// Admin login endpoint
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    if (password === ADMIN_PASSWORD) {
+      res.json({ 
+        success: true, 
+        token: ADMIN_PASSWORD,
+        message: 'Login successful' 
+      });
+    } else {
+      res.status(401).json({ 
+        success: false, 
+        error: 'Invalid password' 
+      });
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
