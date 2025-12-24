@@ -426,8 +426,18 @@ const PropertyPhotos = ({ property, onNavigate }) => {
     }
   };
 
-  // Get the current property data - try to match by title or use default
+  // Get the current property data - prioritize API data over hardcoded
   const getPropertyData = () => {
+    // If property has images from API, use them directly
+    if (property && property.images && property.images.length > 0) {
+      return {
+        ...property,
+        title: property.title || 'Property',
+        location: property.location || 'Location not specified'
+      };
+    }
+
+    // Fallback to hardcoded data if no property or no images
     if (!property) return allProperties[1];
 
     // Try to find property by ID first
@@ -470,22 +480,63 @@ const PropertyPhotos = ({ property, onNavigate }) => {
   // Ensure we have images
   if (!mockProperty.images || mockProperty.images.length === 0) {
     console.warn('No images found for property:', mockProperty.title);
-    mockProperty.images = allProperties[1].images; // Fallback to Princess Tower images
+    mockProperty.images = allProperties[1]?.images || []; // Fallback to Princess Tower images
   }
+
+  // Helper function to extract category from image path/URL
+  const getImageCategory = (imagePath) => {
+    if (!imagePath) return 'Other';
+    
+    const pathStr = typeof imagePath === 'string' ? imagePath : '';
+    
+    // Check for category keywords in the path
+    if (pathStr.includes('Living Room') || pathStr.includes('Living room') || pathStr.includes('living-room')) {
+      return 'Living Room';
+    }
+    if (pathStr.includes('BR1') || pathStr.includes('Bedroom 1') || pathStr.includes('bedroom-1')) {
+      return 'Bedroom 1';
+    }
+    if (pathStr.includes('BR2') || pathStr.includes('Bedroom 2') || pathStr.includes('bedroom-2')) {
+      return 'Bedroom 2';
+    }
+    if (pathStr.includes('kitchen') || pathStr.includes('Kitchen') || pathStr.includes('Full kitchen')) {
+      return 'Kitchen';
+    }
+    if (pathStr.includes('Dinning Room') || pathStr.includes('Dining area') || pathStr.includes('Dining Room')) {
+      return 'Dining Room';
+    }
+    if (pathStr.includes('Bathroom 1') || pathStr.includes('bathroom-1')) {
+      return 'Bathroom 1';
+    }
+    if (pathStr.includes('Bathroom2') || pathStr.includes('bathroom-2')) {
+      return 'Bathroom 2';
+    }
+    if (pathStr.includes('Balcony') || pathStr.includes('balcony')) {
+      return 'Balcony';
+    }
+    if (pathStr.includes('Exterior') || pathStr.includes('exterior')) {
+      return 'Exterior';
+    }
+    if (pathStr.includes('Otherpics') || pathStr.includes('Other')) {
+      return 'Other';
+    }
+    
+    return 'Other';
+  };
 
   // Organize images by category
   const imageCategories = {
     all: mockProperty.images,
-    'Living Room': mockProperty.images.filter(img => img.includes('Living Room') || img.includes('Living room')),
-    'Bedroom 1': mockProperty.images.filter(img => img.includes('BR1')),
-    'Bedroom 2': mockProperty.images.filter(img => img.includes('BR2')),
-    'Kitchen': mockProperty.images.filter(img => img.includes('kitchen') || img.includes('Kitchen')),
-    'Dining Room': mockProperty.images.filter(img => img.includes('Dinning Room') || img.includes('Dining area')),
-    'Bathroom 1': mockProperty.images.filter(img => img.includes('Bathroom 1')),
-    'Bathroom 2': mockProperty.images.filter(img => img.includes('Bathroom2')),
-    'Balcony': mockProperty.images.filter(img => img.includes('Balcony')),
-    'Exterior': mockProperty.images.filter(img => img.includes('Exterior')),
-    'Other': mockProperty.images.filter(img => img.includes('Otherpics'))
+    'Living Room': mockProperty.images.filter(img => getImageCategory(img) === 'Living Room'),
+    'Bedroom 1': mockProperty.images.filter(img => getImageCategory(img) === 'Bedroom 1'),
+    'Bedroom 2': mockProperty.images.filter(img => getImageCategory(img) === 'Bedroom 2'),
+    'Kitchen': mockProperty.images.filter(img => getImageCategory(img) === 'Kitchen'),
+    'Dining Room': mockProperty.images.filter(img => getImageCategory(img) === 'Dining Room'),
+    'Bathroom 1': mockProperty.images.filter(img => getImageCategory(img) === 'Bathroom 1'),
+    'Bathroom 2': mockProperty.images.filter(img => getImageCategory(img) === 'Bathroom 2'),
+    'Balcony': mockProperty.images.filter(img => getImageCategory(img) === 'Balcony'),
+    'Exterior': mockProperty.images.filter(img => getImageCategory(img) === 'Exterior'),
+    'Other': mockProperty.images.filter(img => getImageCategory(img) === 'Other')
   };
 
   const currentImages = imageCategories[selectedCategory] || imageCategories.all;
@@ -588,9 +639,18 @@ const PropertyPhotos = ({ property, onNavigate }) => {
                 }}
               >
                 <img
-                  src={images[0]}
+                  src={getImageUrlWithFallback(images[0])}
                   alt={category}
                   loading="lazy"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    // Fallback to local path
+                    const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                    const imgPath = images[0];
+                    if (imgPath && !imgPath.startsWith('http')) {
+                      e.target.src = `${websiteUrl}${imgPath.startsWith('/') ? '' : '/'}${imgPath.replace(/^\.\//, '')}`;
+                    }
+                  }}
                 />
                 <div className="category-label">{category}</div>
               </div>
@@ -619,6 +679,7 @@ const PropertyPhotos = ({ property, onNavigate }) => {
                       src={getImageUrlWithFallback(image)}
                       alt={`${category} ${index + 1}`}
                       loading="lazy"
+                      crossOrigin="anonymous"
                       onError={(e) => {
                         // Fallback to local path
                         const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
@@ -652,6 +713,7 @@ const PropertyPhotos = ({ property, onNavigate }) => {
                   src={getImageUrlWithFallback(image)}
                   alt={`Property ${index + 1}`}
                   loading="lazy"
+                  crossOrigin="anonymous"
                   onError={(e) => {
                     // Fallback to local path
                     const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
@@ -690,6 +752,7 @@ const PropertyPhotos = ({ property, onNavigate }) => {
 
               <img
                 src={getImageUrlWithFallback(currentImages[selectedImage])}
+                crossOrigin="anonymous"
                 onError={(e) => {
                   // Fallback to local path
                   const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
