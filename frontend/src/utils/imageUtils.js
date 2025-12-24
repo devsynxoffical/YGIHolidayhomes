@@ -45,16 +45,21 @@ export function getImageUrl(imagePath) {
 export function getImageUrlWithFallback(imagePath, fallbackPath = null) {
   if (!imagePath) return fallbackPath || '';
 
-  // If it's already a MongoDB URL, return as is
-  if (imagePath.includes('/api/images/')) {
-    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}${imagePath}`;
+  // If it's already a full URL (http/https), return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
   }
 
-  // Try MongoDB first
+  // If it's already a MongoDB API URL path, make it full URL
+  if (imagePath.includes('/api/images/')) {
+    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  }
+
+  // Try MongoDB first - convert local path to MongoDB URL
   const mongoUrl = getImageUrl(imagePath);
   
-  // If we have a fallback, use it; otherwise use the original path
-  return mongoUrl || fallbackPath || `${WEBSITE_BASE_URL}/${imagePath.replace(/^\.\//, '')}`;
+  // Return MongoDB URL (will fallback via onError handler if it fails)
+  return mongoUrl;
 }
 
 /**

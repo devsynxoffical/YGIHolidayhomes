@@ -442,11 +442,14 @@ app.get('/api/images/:imageId', async (req, res) => {
 
     const file = files[0];
     
-    // Set appropriate headers
+    // Set appropriate headers with CORS
     res.set({
       'Content-Type': file.metadata?.mimeType || 'image/jpeg',
       'Content-Length': file.length,
-      'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
+      'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type'
     });
 
     // Stream the image
@@ -482,7 +485,10 @@ app.get('/api/images/filename/:filename', async (req, res) => {
     res.set({
       'Content-Type': file.metadata?.mimeType || 'image/jpeg',
       'Content-Length': file.length,
-      'Cache-Control': 'public, max-age=31536000'
+      'Cache-Control': 'public, max-age=31536000',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type'
     });
 
     const downloadStream = bucket.openDownloadStream(file._id);

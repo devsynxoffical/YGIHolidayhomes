@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import './PropertyPhotos.css';
 
 const PropertyPhotos = ({ property, onNavigate }) => {
@@ -615,9 +616,16 @@ const PropertyPhotos = ({ property, onNavigate }) => {
                     }}
                   >
                     <img
-                      src={image}
+                      src={getImageUrlWithFallback(image)}
                       alt={`${category} ${index + 1}`}
                       loading="lazy"
+                      onError={(e) => {
+                        // Fallback to local path
+                        const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                        if (image && !image.startsWith('http')) {
+                          e.target.src = `${websiteUrl}${image.startsWith('/') ? '' : '/'}${image.replace(/^\.\//, '')}`;
+                        }
+                      }}
                     />
                     <div className="photo-label">{category} {index + 1}</div>
                   </div>
@@ -641,9 +649,16 @@ const PropertyPhotos = ({ property, onNavigate }) => {
                 }}
               >
                 <img
-                  src={image}
+                  src={getImageUrlWithFallback(image)}
                   alt={`Property ${index + 1}`}
                   loading="lazy"
+                  onError={(e) => {
+                    // Fallback to local path
+                    const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                    if (image && !image.startsWith('http')) {
+                      e.target.src = `${websiteUrl}${image.startsWith('/') ? '' : '/'}${image.replace(/^\.\//, '')}`;
+                    }
+                  }}
                 />
               </div>
             ))}
@@ -674,7 +689,15 @@ const PropertyPhotos = ({ property, onNavigate }) => {
               </button>
 
               <img
-                src={currentImages[selectedImage]}
+                src={getImageUrlWithFallback(currentImages[selectedImage])}
+                onError={(e) => {
+                  // Fallback to local path
+                  const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                  const img = currentImages[selectedImage];
+                  if (img && !img.startsWith('http')) {
+                    e.target.src = `${websiteUrl}${img.startsWith('/') ? '' : '/'}${img.replace(/^\.\//, '')}`;
+                  }
+                }}
                 alt={`${mockProperty.title} - ${selectedCategory} ${selectedImage + 1}`}
                 className="lightbox-image"
               />
