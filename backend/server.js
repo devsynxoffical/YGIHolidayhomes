@@ -484,6 +484,17 @@ app.get('/api/images/:imageId/metadata', async (req, res) => {
   }
 });
 
+// Handle OPTIONS preflight for image endpoint
+app.options('/api/images/:imageId', (req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400' // 24 hours
+  });
+  res.sendStatus(204);
+});
+
 // Get image from MongoDB GridFS
 app.get('/api/images/:imageId', async (req, res) => {
   try {
@@ -492,7 +503,7 @@ app.get('/api/images/:imageId', async (req, res) => {
     // Set CORS headers before any response
     res.set({
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type'
     });
 
@@ -500,12 +511,26 @@ app.get('/api/images/:imageId', async (req, res) => {
     try {
       imageId = new ObjectId(req.params.imageId);
     } catch (error) {
+      // Return 400 with CORS headers
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+      });
       return res.status(400).json({ error: 'Invalid image ID format' });
     }
 
     // Check if file exists
     const files = await bucket.find({ _id: imageId }).toArray();
     if (files.length === 0) {
+      // Return 404 with CORS headers
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+      });
       return res.status(404).json({ error: 'Image not found' });
     }
 

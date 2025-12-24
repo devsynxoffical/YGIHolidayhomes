@@ -217,6 +217,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
                         src={finalUrl}
                         alt={property.title}
                         loading="lazy"
+                        crossOrigin="anonymous"
                         data-fallback-urls={JSON.stringify(allImageUrls.slice(1))}
                         data-tried-index="0"
                         onError={(e) => {
