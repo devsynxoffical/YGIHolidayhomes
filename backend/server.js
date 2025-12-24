@@ -603,8 +603,14 @@ app.get('/api/images/filename/:filename', async (req, res) => {
     }
 
     if (!file) {
-      console.log(`❌ Image not found. Tried variations:`, filenameVariations);
-      // Return 404 with CORS headers
+      console.log(`❌ Image not found. Tried variations:`, filenameVariations.slice(0, 3));
+      // Return 404 with CORS headers explicitly set
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+      });
       return res.status(404).json({ 
         error: 'Image not found',
         tried: filenameVariations.slice(0, 3) // Don't log all variations
