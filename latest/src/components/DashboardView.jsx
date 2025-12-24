@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
+import * as FaIcons from 'react-icons/fa';
 import './Dashboard.css';
+
+const {
+  FaCalendarAlt, 
+  FaCheckCircle, 
+  FaBolt,
+  FaBuilding,
+  FaMoneyBillWave,
+  FaChartBar
+} = FaIcons;
 
 function DashboardView({ apiBaseUrl, token, onViewChange }) {
   const [statistics, setStatistics] = useState(null);
@@ -69,7 +79,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
 
       <div className="dashboard-stats">
         <div className="stat-card">
-          <div className="stat-icon">🏠</div>
+          <div className="stat-icon-wrapper stat-icon-primary">
+            <FaBuilding className="stat-icon" />
+          </div>
           <div className="stat-content">
             <h3>Total Properties</h3>
             <p className="stat-value">{stats.totalProperties}</p>
@@ -79,7 +91,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon-wrapper stat-icon-secondary">
+            <FaCalendarAlt className="stat-icon" />
+          </div>
           <div className="stat-content">
             <h3>Total Bookings</h3>
             <p className="stat-value">{stats.totalBookings}</p>
@@ -89,7 +103,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon-wrapper stat-icon-success">
+            <FaCheckCircle className="stat-icon" />
+          </div>
           <div className="stat-content">
             <h3>Current Bookings</h3>
             <p className="stat-value">{stats.currentBookings}</p>
@@ -99,7 +115,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">💰</div>
+          <div className="stat-icon-wrapper stat-icon-warning">
+            <FaMoneyBillWave className="stat-icon" />
+          </div>
           <div className="stat-content">
             <h3>Total Revenue</h3>
             <p className="stat-value">AED {stats.totalRevenue.toLocaleString()}</p>
@@ -109,7 +127,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon-wrapper stat-icon-info">
+            <FaChartBar className="stat-icon" />
+          </div>
           <div className="stat-content">
             <h3>Monthly Revenue</h3>
             <p className="stat-value">AED {stats.monthlyRevenue.toLocaleString()}</p>
@@ -118,8 +138,10 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">📈</div>
+        <div className="stat-card stat-card-actions">
+          <div className="stat-icon-wrapper stat-icon-accent">
+            <FaBolt className="stat-icon" />
+          </div>
           <div className="stat-content">
             <h3>Quick Actions</h3>
             <p className="stat-description">Manage your website</p>

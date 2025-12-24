@@ -5,15 +5,34 @@ import './PropertyList.css';
 const WEBSITE_URL = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
 
 // Helper function to convert relative image paths to absolute URLs
-const getImageUrl = (imagePath) => {
+const getImageUrl = (imagePath, apiBaseUrl) => {
   if (!imagePath) return '';
   
-  // If already an absolute URL, return as is
+  // If already an absolute URL (http/https), return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
   
-  // Convert relative paths (./path) to absolute paths (/path)
+  // If it's a MongoDB image path (/api/images/...)
+  if (imagePath.includes('/api/images/')) {
+    // Check if it's already a full URL
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // It's a relative path, construct full URL
+    return `${apiBaseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  }
+  
+  // For old relative paths, try to convert to MongoDB URL first
+  // This handles legacy paths that might still be in the database
+  if (imagePath.startsWith('./') || (!imagePath.startsWith('http') && !imagePath.startsWith('/api'))) {
+    // Try to construct MongoDB URL from filename
+    const cleanPath = imagePath.replace(/^\.\//, '').replace(/\\/g, '/');
+    const encodedFilename = encodeURIComponent(cleanPath);
+    return `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
+  }
+  
+  // Convert relative paths (./path) to absolute paths (/path) as fallback
   let cleanPath = imagePath;
   if (imagePath.startsWith('./')) {
     cleanPath = imagePath.substring(1); // Remove ./
@@ -142,13 +161,13 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
               <div className="property-image">
                 {property.images && property.images.length > 0 ? (
                   <img 
-                    src={getImageUrl(property.images[0])}
+                    src={getImageUrl(property.images[0], apiBaseUrl)}
                     alt={property.title}
                     loading="lazy"
                     onError={(e) => {
                       // Try alternative image or show placeholder
                       if (property.images.length > 1) {
-                        e.target.src = getImageUrl(property.images[1]);
+                        e.target.src = getImageUrl(property.images[1], apiBaseUrl);
                       } else {
                         e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
                       }

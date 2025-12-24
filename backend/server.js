@@ -410,11 +410,26 @@ app.post('/api/images/upload', authenticateAdmin, upload.single('image'), async 
     uploadStream.end(req.file.buffer);
 
     uploadStream.on('finish', () => {
+      // Return full URL for the image
+      // Use environment variable or construct from request
+      let baseUrl = process.env.BACKEND_URL || process.env.RAILWAY_PUBLIC_DOMAIN;
+      if (!baseUrl) {
+        // Fallback: construct from request
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+        const host = req.headers['x-forwarded-host'] || req.get('host') || 'ygiholidayhomes-production.up.railway.app';
+        baseUrl = `${protocol}://${host}`;
+      }
+      // Ensure baseUrl doesn't end with /
+      baseUrl = baseUrl.replace(/\/$/, '');
+      
+      const imageUrl = `${baseUrl}/api/images/${uploadStream.id}`;
+      
       res.json({
         success: true,
         imageId: uploadStream.id.toString(),
         filename: uploadStream.filename,
-        url: `/api/images/${uploadStream.id}`
+        url: imageUrl,
+        category: category
       });
     });
 
@@ -425,6 +440,37 @@ app.post('/api/images/upload', authenticateAdmin, upload.single('image'), async 
   } catch (error) {
     console.error('Error in image upload:', error);
     res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Get image metadata (including category)
+app.get('/api/images/:imageId/metadata', async (req, res) => {
+  try {
+    const bucket = await getBucket();
+    const imageId = new ObjectId(req.params.imageId);
+
+    const files = await bucket.find({ _id: imageId }).toArray();
+    if (files.length === 0) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const file = files[0];
+    const baseUrl = process.env.BACKEND_URL || req.protocol + '://' + req.get('host');
+    
+    res.json({
+      success: true,
+      imageId: file._id.toString(),
+      filename: file.filename,
+      url: `${baseUrl}/api/images/${file._id}`,
+      category: file.metadata?.category || 'Other',
+      propertyId: file.metadata?.propertyId || null,
+      uploadedAt: file.uploadDate,
+      size: file.length,
+      mimeType: file.metadata?.mimeType || 'image/jpeg'
+    });
+  } catch (error) {
+    console.error('Error retrieving image metadata:', error);
+    res.status(500).json({ error: 'Failed to retrieve image metadata' });
   }
 });
 
@@ -676,12 +722,38 @@ app.post('/api/admin/properties', authenticateAdmin, async (req, res) => {
       ? Math.max(...properties.map(p => p.id)) + 1 
       : 1;
     
+    // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
+    // Remove relative paths (old local paths) as they won't work with MongoDB
+    let validImages = [];
+    if (Array.isArray(req.body.images)) {
+      validImages = req.body.images
+        .map(img => typeof img === 'string' ? img : (img?.url || img))
+        .filter(img => {
+          if (!img || !img.trim()) return false;
+          const trimmed = img.trim();
+          // Only keep full URLs (http/https) or MongoDB API paths
+          return trimmed.startsWith('http://') || 
+                 trimmed.startsWith('https://') || 
+                 trimmed.startsWith('/api/images/');
+        });
+    }
+    
     const newProperty = {
       ...req.body,
       id: newId,
+      images: validImages, // Use filtered images
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    
+    // Ensure images array is properly saved
+    if (newProperty.images) {
+      console.log('Saving property with images:', newProperty.images.length, 'images');
+      console.log('Image URLs:', newProperty.images);
+      if (req.body.images && req.body.images.length !== validImages.length) {
+        console.log('⚠️ Filtered out', req.body.images.length - validImages.length, 'invalid image paths (relative paths)');
+      }
+    }
     
     properties.push(newProperty);
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
@@ -707,13 +779,43 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Property not found' });
     }
     
-    properties[index] = {
+    // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
+    // Remove relative paths (old local paths) as they won't work with MongoDB
+    let validImages = [];
+    if (Array.isArray(req.body.images)) {
+      validImages = req.body.images
+        .map(img => typeof img === 'string' ? img : (img?.url || img))
+        .filter(img => {
+          if (!img || !img.trim()) return false;
+          const trimmed = img.trim();
+          // Only keep full URLs (http/https) or MongoDB API paths
+          return trimmed.startsWith('http://') || 
+                 trimmed.startsWith('https://') || 
+                 trimmed.startsWith('/api/images/');
+        });
+    } else if (req.body.images === undefined) {
+      // If images not provided, keep existing images
+      validImages = properties[index].images || [];
+    }
+    
+    const updatedProperty = {
       ...properties[index],
       ...req.body,
       id: parseInt(id),
+      images: validImages, // Use filtered images
       updatedAt: new Date().toISOString()
     };
     
+    // Ensure images array is properly saved
+    if (updatedProperty.images) {
+      console.log('Updating property with images:', updatedProperty.images.length, 'images');
+      console.log('Image URLs:', updatedProperty.images);
+      if (req.body.images && Array.isArray(req.body.images) && req.body.images.length !== validImages.length) {
+        console.log('⚠️ Filtered out', req.body.images.length - validImages.length, 'invalid image paths (relative paths)');
+      }
+    }
+    
+    properties[index] = updatedProperty;
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
     
     console.log('✅ Property updated:', id);

@@ -52,7 +52,11 @@ export function getImageUrlWithFallback(imagePath, fallbackPath = null) {
 
   // If it's already a MongoDB API URL path, make it full URL
   if (imagePath.includes('/api/images/')) {
-    return imagePath.startsWith('http') ? imagePath : `${API_BASE_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath; // Already a full URL
+    }
+    // It's a relative path like /api/images/xxx, make it full URL
+    return `${API_BASE_URL}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
   }
 
   // Try MongoDB first - convert local path to MongoDB URL

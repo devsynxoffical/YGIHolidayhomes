@@ -21,7 +21,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     available: true,
     slug: '',
     description: '',
-    images: [],
+    images: [], // Always initialize as array
     space: {
       kitchen: '',
       living: '',
@@ -45,6 +45,22 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
   const [ruleInput, setRuleInput] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [selectedImageCategory, setSelectedImageCategory] = useState('Living Room');
+  
+  // Image categories matching the frontend PropertyPhotos component
+  const imageCategories = [
+    'Living Room',
+    'Bedroom 1',
+    'Bedroom 2',
+    'Bedroom 3',
+    'Kitchen',
+    'Dining Room',
+    'Bathroom 1',
+    'Bathroom 2',
+    'Balcony',
+    'Exterior',
+    'Other'
+  ];
   
   // Ensure inputs always have string values (not undefined)
   useEffect(() => {
@@ -56,10 +72,43 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
 
   useEffect(() => {
     if (property) {
+      console.log('Loading property for editing:', property);
+      console.log('Property images:', property.images);
+      
+      // Process images: convert relative paths to MongoDB URLs for preview
+      // But keep them separate so we don't save invalid paths back
+      const processedImages = (property.images || []).map(img => {
+        const imageUrl = typeof img === 'string' ? img : (img?.url || img);
+        
+        // If it's already a full URL, keep it
+        if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+          return imageUrl;
+        }
+        
+        // If it's a MongoDB API path, make it full URL
+        if (imageUrl && imageUrl.includes('/api/images/')) {
+          if (imageUrl.startsWith('/api/images/')) {
+            return `${apiBaseUrl}${imageUrl}`;
+          }
+          return imageUrl;
+        }
+        
+        // If it's a relative path (old local path), try to convert to MongoDB URL
+        // This is for preview only - we'll filter these out when saving
+        if (imageUrl && (imageUrl.startsWith('./') || !imageUrl.startsWith('http'))) {
+          // Try to construct MongoDB URL from filename
+          const cleanPath = imageUrl.replace(/^\.\//, '').replace(/\\/g, '/');
+          const encodedFilename = encodeURIComponent(cleanPath);
+          return `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
+        }
+        
+        return imageUrl;
+      }).filter(img => img); // Remove any null/undefined
+      
       setFormData({
         ...property,
         highlights: property.highlights || [],
-        images: property.images || [],
+        images: processedImages,
         sleeping: property.sleeping || [],
         access: property.access || [],
         rules: property.rules || [],
@@ -67,7 +116,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         space: property.space || { kitchen: '', living: '', facilities: '' }
       });
     }
-  }, [property]);
+  }, [property, apiBaseUrl]);
 
   // Ensure inputs always have string values (not undefined) to fix controlled input warning
   useEffect(() => {
@@ -151,9 +200,15 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
       const uploadPromises = files.map(async (file, index) => {
         const formData = new FormData();
         formData.append('image', file);
-        formData.append('filename', file.name);
+        // Create filename with category prefix for better organization
+        const categoryPrefix = selectedImageCategory.replace(/\s+/g, '-').toLowerCase();
+        const timestamp = Date.now();
+        const fileExtension = file.name.split('.').pop();
+        const filename = `${categoryPrefix}_${timestamp}_${index}.${fileExtension}`;
+        
+        formData.append('filename', filename);
         formData.append('propertyId', property?.id || '');
-        formData.append('category', 'property');
+        formData.append('category', selectedImageCategory); // Use selected category
 
         setUploadProgress(prev => ({ ...prev, [index]: 0 }));
 
@@ -172,18 +227,44 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
 
         const data = await response.json();
         setUploadProgress(prev => ({ ...prev, [index]: 100 }));
-        return data.url; // Return the MongoDB image URL
+        
+        // Ensure we have a full URL
+        let imageUrl = data.url;
+        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+          // If it's a relative path, make it absolute
+          if (imageUrl.startsWith('/api/images/')) {
+            imageUrl = `${apiBaseUrl}${imageUrl}`;
+          } else {
+            imageUrl = `${apiBaseUrl}/${imageUrl}`;
+          }
+        }
+        
+        console.log('Uploaded image URL:', imageUrl); // Debug log
+        
+        return {
+          url: imageUrl,
+          category: data.category || selectedImageCategory,
+          imageId: data.imageId
+        };
       });
 
-      const uploadedUrls = await Promise.all(uploadPromises);
+      const uploadedImages = await Promise.all(uploadPromises);
       
-      // Add uploaded image URLs to form data
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...uploadedUrls]
-      }));
+      // Add uploaded images to form data
+      // Store as array of URLs (strings) for compatibility
+      const newImageUrls = uploadedImages.map(img => img.url);
+      console.log('Uploaded image URLs:', newImageUrls);
+      
+      setFormData(prev => {
+        const updatedImages = [...(prev.images || []), ...newImageUrls];
+        console.log('Updated formData.images:', updatedImages);
+        return {
+          ...prev,
+          images: updatedImages
+        };
+      });
 
-      alert(`✅ Successfully uploaded ${uploadedUrls.length} image(s) to MongoDB!`);
+      alert(`✅ Successfully uploaded ${uploadedImages.length} image(s) to MongoDB in "${selectedImageCategory}" category!`);
     } catch (err) {
       setError(err.message || 'Failed to upload images');
       console.error('Error uploading images:', err);
@@ -201,6 +282,34 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     setError('');
 
     try {
+      // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
+      // Remove relative paths (old local paths) as they won't work with MongoDB
+      const validImages = Array.isArray(formData.images) 
+        ? formData.images
+            .map(img => {
+              // Handle both string URLs and object format
+              const imageUrl = typeof img === 'string' ? img : (img?.url || img);
+              return imageUrl;
+            })
+            .filter(img => {
+              if (!img || !img.trim()) return false;
+              const trimmed = img.trim();
+              // Only keep full URLs (http/https) or MongoDB API paths
+              return trimmed.startsWith('http://') || 
+                     trimmed.startsWith('https://') || 
+                     trimmed.startsWith('/api/images/');
+            })
+        : [];
+      
+      // Ensure images array is properly formatted
+      const submitData = {
+        ...formData,
+        images: validImages
+      };
+      
+      console.log('Submitting property with images:', submitData.images);
+      console.log('Filtered out relative paths, kept only full URLs');
+      
       const url = property 
         ? `${apiBaseUrl}/api/admin/properties/${property.id}`
         : `${apiBaseUrl}/api/admin/properties`;
@@ -213,7 +322,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       const data = await response.json();
@@ -524,6 +633,30 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         <section className="form-section">
           <h2>Images</h2>
           
+          {/* Image Category Selection */}
+          <div className="form-group" style={{ marginBottom: '15px' }}>
+            <label>Select Image Category/Section *</label>
+            <select
+              value={selectedImageCategory}
+              onChange={(e) => setSelectedImageCategory(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '16px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                backgroundColor: '#fff'
+              }}
+            >
+              {imageCategories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <p style={{ marginTop: '5px', fontSize: '14px', color: '#666' }}>
+              Select the section where these images belong (e.g., Living Room, Bedroom 1, Kitchen, etc.)
+            </p>
+          </div>
+          
           {/* Image Upload */}
           <div className="image-upload-section">
             <label className="upload-label">
@@ -537,10 +670,42 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 id="image-upload"
               />
               <span className="upload-button">
-                {uploadingImages ? 'Uploading...' : '📤 Upload Images'}
+                {uploadingImages ? 'Uploading...' : '📤 Upload Images to ' + selectedImageCategory}
               </span>
             </label>
-            <p className="upload-hint">Select multiple images to upload to MongoDB</p>
+            <p className="upload-hint">
+              Select multiple images to upload to MongoDB. Images will be categorized as "{selectedImageCategory}".
+            </p>
+            
+            {/* Upload Progress */}
+            {Object.keys(uploadProgress).length > 0 && (
+              <div style={{ marginTop: '10px' }}>
+                {Object.entries(uploadProgress).map(([index, progress]) => (
+                  <div key={index} style={{ marginBottom: '5px' }}>
+                    <div style={{ 
+                      width: '100%', 
+                      backgroundColor: '#f0f0f0', 
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${progress}%`,
+                        height: '20px',
+                        backgroundColor: '#4CAF50',
+                        transition: 'width 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontSize: '12px'
+                      }}>
+                        {progress < 100 ? `${progress}%` : 'Complete'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Manual Image URL Input */}
@@ -570,37 +735,96 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
           </div>
 
           {/* Image Preview Grid */}
-          {formData.images.length > 0 && (
+          {formData.images && formData.images.length > 0 ? (
             <div className="image-preview-grid">
-              {formData.images.map((image, index) => (
-                <div key={index} className="image-preview-item">
-                  <img 
-                    src={image.startsWith('http') || image.startsWith('/api/images') 
-                      ? image 
-                      : `${apiBaseUrl}${image.startsWith('/') ? '' : '/'}${image}`} 
-                    alt={`Preview ${index + 1}`}
-                    onError={(e) => {
-                      // Fallback for local images
-                      const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
-                      if (image && !image.startsWith('http') && !image.startsWith('/api')) {
-                        e.target.src = `${websiteUrl}/${image.replace(/^\.\//, '')}`;
-                      }
-                    }}
-                  />
-                  <div className="image-preview-overlay">
-                    <button
-                      type="button"
-                      onClick={() => handleArrayRemove('images', index)}
-                      className="image-remove-btn"
-                      title="Remove image"
-                    >
-                      ×
-                    </button>
+              {formData.images.map((image, index) => {
+                // Handle both string URLs and object format
+                const imageUrl = typeof image === 'string' ? image : (image?.url || image);
+                
+                if (!imageUrl || !imageUrl.trim()) {
+                  return null; // Skip empty images
+                }
+                
+                // Construct full URL for MongoDB images
+                let fullImageUrl = imageUrl.trim();
+                if (!fullImageUrl.startsWith('http://') && !fullImageUrl.startsWith('https://')) {
+                  // It's a relative path - construct full URL
+                  if (fullImageUrl.startsWith('/api/images/')) {
+                    fullImageUrl = `${apiBaseUrl}${fullImageUrl}`;
+                  } else if (fullImageUrl.startsWith('/')) {
+                    fullImageUrl = `${apiBaseUrl}${fullImageUrl}`;
+                  } else {
+                    fullImageUrl = `${apiBaseUrl}/${fullImageUrl}`;
+                  }
+                }
+                
+                console.log(`Preview image ${index}:`, { original: imageUrl, full: fullImageUrl }); // Debug log
+                
+                return (
+                  <div key={`img-${index}-${imageUrl.substring(0, 20)}`} className="image-preview-item">
+                    <img 
+                      src={fullImageUrl}
+                      alt={`Preview ${index + 1}`}
+                      crossOrigin="anonymous"
+                      onError={(e) => {
+                        console.error(`Failed to load image ${index}:`, {
+                          original: imageUrl,
+                          full: fullImageUrl,
+                          error: 'Image load failed'
+                        });
+                        // Fallback for local images
+                        const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+                        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/api')) {
+                          const cleanPath = imageUrl.replace(/^\.\//, '');
+                          e.target.src = `${websiteUrl}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+                        } else {
+                          e.target.src = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log(`✅ Successfully loaded image ${index}:`, fullImageUrl);
+                      }}
+                      style={{ 
+                        width: '100%', 
+                        height: '200px', 
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        backgroundColor: '#f0f0f0',
+                        display: 'block'
+                      }}
+                    />
+                    <div className="image-preview-overlay">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log('Removing image at index:', index);
+                          handleArrayRemove('images', index);
+                        }}
+                        className="image-remove-btn"
+                        title="Remove image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="image-url-preview" style={{ 
+                      fontSize: '11px', 
+                      color: '#666', 
+                      padding: '5px',
+                      wordBreak: 'break-all',
+                      maxHeight: '40px',
+                      overflow: 'hidden'
+                    }}>
+                      {typeof image === 'object' && image.category ? `${image.category}: ` : ''}
+                      {fullImageUrl.length > 60 ? `${fullImageUrl.substring(0, 60)}...` : fullImageUrl}
+                    </div>
                   </div>
-                  <div className="image-url-preview">{image.substring(0, 50)}...</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+          ) : (
+            <p style={{ color: '#666', fontStyle: 'italic', marginTop: '10px' }}>
+              No images uploaded yet. Upload images above to see previews.
+            </p>
           )}
         </section>
 
