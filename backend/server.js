@@ -413,16 +413,26 @@ app.post('/api/images/upload', authenticateAdmin, upload.single('image'), async 
       // Return full URL for the image
       // Use environment variable or construct from request
       let baseUrl = process.env.BACKEND_URL || process.env.RAILWAY_PUBLIC_DOMAIN;
+      
+      // If BACKEND_URL is set but doesn't have protocol, add it
+      if (baseUrl && !baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+      
       if (!baseUrl) {
         // Fallback: construct from request
         const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
         const host = req.headers['x-forwarded-host'] || req.get('host') || 'ygiholidayhomes-production.up.railway.app';
         baseUrl = `${protocol}://${host}`;
       }
+      
       // Ensure baseUrl doesn't end with /
       baseUrl = baseUrl.replace(/\/$/, '');
       
+      // Construct image URL - ensure we don't duplicate the domain
       const imageUrl = `${baseUrl}/api/images/${uploadStream.id}`;
+      
+      console.log('✅ Image uploaded, returning URL:', imageUrl); // Debug log
       
       res.json({
         success: true,
@@ -478,7 +488,20 @@ app.get('/api/images/:imageId/metadata', async (req, res) => {
 app.get('/api/images/:imageId', async (req, res) => {
   try {
     const bucket = await getBucket();
-    const imageId = new ObjectId(req.params.imageId);
+    
+    // Set CORS headers before any response
+    res.set({
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+
+    let imageId;
+    try {
+      imageId = new ObjectId(req.params.imageId);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid image ID format' });
+    }
 
     // Check if file exists
     const files = await bucket.find({ _id: imageId }).toArray();
@@ -505,12 +528,22 @@ app.get('/api/images/:imageId', async (req, res) => {
     downloadStream.on('error', (error) => {
       console.error('Error streaming image:', error);
       if (!res.headersSent) {
+        res.set({
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        });
         res.status(500).json({ error: 'Failed to retrieve image' });
       }
     });
   } catch (error) {
     console.error('Error retrieving image:', error);
     if (!res.headersSent) {
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
       res.status(500).json({ error: 'Failed to retrieve image' });
     }
   }
@@ -520,14 +553,64 @@ app.get('/api/images/:imageId', async (req, res) => {
 app.get('/api/images/filename/:filename', async (req, res) => {
   try {
     const bucket = await getBucket();
-    const filename = decodeURIComponent(req.params.filename);
+    let filename = decodeURIComponent(req.params.filename);
 
-    const files = await bucket.find({ filename }).sort({ uploadDate: -1 }).limit(1).toArray();
-    if (files.length === 0) {
-      return res.status(404).json({ error: 'Image not found' });
+    // Set CORS headers before any response
+    res.set({
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+
+    // Try multiple filename variations
+    const filenameVariations = [
+      filename, // Original
+      filename.replace(/^\.\//, ''), // Remove ./ prefix
+      filename.replace(/\\/g, '/'), // Normalize backslashes
+      filename.replace(/^\.\//, '').replace(/\\/g, '/'), // Both
+      path.basename(filename), // Just the filename part (UUID + extension)
+    ];
+
+    let file = null;
+    let foundVariation = null;
+
+    // Try each variation
+    for (const variation of filenameVariations) {
+      const files = await bucket.find({ filename: variation }).sort({ uploadDate: -1 }).limit(1).toArray();
+      if (files.length > 0) {
+        file = files[0];
+        foundVariation = variation;
+        console.log(`✅ Found image with variation: "${variation}" (original: "${filename}")`);
+        break;
+      }
     }
 
-    const file = files[0];
+    // If still not found, try to find by UUID (the filename part after last /)
+    if (!file) {
+      const uuidMatch = filename.match(/([a-f0-9-]+\.(jpg|jpeg|png|gif|webp|avif))$/i);
+      if (uuidMatch) {
+        const uuidFilename = uuidMatch[1];
+        console.log(`🔍 Trying to find by UUID filename: "${uuidFilename}"`);
+        const files = await bucket.find({ 
+          filename: { $regex: uuidFilename, $options: 'i' }
+        }).sort({ uploadDate: -1 }).limit(1).toArray();
+        if (files.length > 0) {
+          file = files[0];
+          foundVariation = `regex:${uuidFilename}`;
+          console.log(`✅ Found image by UUID regex: "${uuidFilename}"`);
+        }
+      }
+    }
+
+    if (!file) {
+      console.log(`❌ Image not found. Tried variations:`, filenameVariations);
+      // Return 404 with CORS headers
+      return res.status(404).json({ 
+        error: 'Image not found',
+        tried: filenameVariations.slice(0, 3) // Don't log all variations
+      });
+    }
+
     res.set({
       'Content-Type': file.metadata?.mimeType || 'image/jpeg',
       'Content-Length': file.length,
@@ -543,12 +626,22 @@ app.get('/api/images/filename/:filename', async (req, res) => {
     downloadStream.on('error', (error) => {
       console.error('Error streaming image:', error);
       if (!res.headersSent) {
+        res.set({
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        });
         res.status(500).json({ error: 'Failed to retrieve image' });
       }
     });
   } catch (error) {
     console.error('Error retrieving image by filename:', error);
     if (!res.headersSent) {
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
       res.status(500).json({ error: 'Failed to retrieve image' });
     }
   }
@@ -779,6 +872,9 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Property not found' });
     }
     
+    const oldProperty = properties[index];
+    const oldImages = oldProperty.images || [];
+    
     // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
     // Remove relative paths (old local paths) as they won't work with MongoDB
     let validImages = [];
@@ -795,11 +891,40 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
         });
     } else if (req.body.images === undefined) {
       // If images not provided, keep existing images
-      validImages = properties[index].images || [];
+      validImages = oldImages;
+    }
+    
+    // Find images that were removed (exist in oldImages but not in validImages)
+    const removedImages = oldImages.filter(oldImg => {
+      const oldUrl = typeof oldImg === 'string' ? oldImg : (oldImg?.url || oldImg);
+      return !validImages.some(newImg => {
+        const newUrl = typeof newImg === 'string' ? newImg : (newImg?.url || newImg);
+        return oldUrl === newUrl || oldUrl.trim() === newUrl.trim();
+      });
+    });
+    
+    // Delete removed images from MongoDB
+    if (removedImages.length > 0) {
+      const bucket = await getBucket();
+      for (const removedImg of removedImages) {
+        const imgUrl = typeof removedImg === 'string' ? removedImg : (removedImg?.url || removedImg);
+        // Extract imageId from URL (format: https://domain/api/images/{imageId} or /api/images/{imageId})
+        const imageIdMatch = imgUrl.match(/\/api\/images\/([a-fA-F0-9]{24})/);
+        if (imageIdMatch && imageIdMatch[1]) {
+          try {
+            const imageId = new ObjectId(imageIdMatch[1]);
+            await bucket.delete(imageId);
+            console.log('✅ Deleted orphaned image from MongoDB:', imageIdMatch[1]);
+          } catch (err) {
+            console.error('Error deleting orphaned image:', err);
+            // Continue even if deletion fails
+          }
+        }
+      }
     }
     
     const updatedProperty = {
-      ...properties[index],
+      ...oldProperty,
       ...req.body,
       id: parseInt(id),
       images: validImages, // Use filtered images
@@ -812,6 +937,9 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
       console.log('Image URLs:', updatedProperty.images);
       if (req.body.images && Array.isArray(req.body.images) && req.body.images.length !== validImages.length) {
         console.log('⚠️ Filtered out', req.body.images.length - validImages.length, 'invalid image paths (relative paths)');
+      }
+      if (removedImages.length > 0) {
+        console.log('🗑️ Deleted', removedImages.length, 'orphaned image(s) from MongoDB');
       }
     }
     
@@ -839,7 +967,37 @@ app.delete('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Property not found' });
     }
     
-    const deletedProperty = properties.splice(index, 1)[0];
+    const deletedProperty = properties[index];
+    const propertyImages = deletedProperty.images || [];
+    
+    // Delete all associated images from MongoDB
+    if (propertyImages.length > 0) {
+      const bucket = await getBucket();
+      let deletedCount = 0;
+      
+      for (const img of propertyImages) {
+        const imgUrl = typeof img === 'string' ? img : (img?.url || img);
+        // Extract imageId from URL (format: https://domain/api/images/{imageId} or /api/images/{imageId})
+        const imageIdMatch = imgUrl.match(/\/api\/images\/([a-fA-F0-9]{24})/);
+        if (imageIdMatch && imageIdMatch[1]) {
+          try {
+            const imageId = new ObjectId(imageIdMatch[1]);
+            await bucket.delete(imageId);
+            deletedCount++;
+            console.log('✅ Deleted property image from MongoDB:', imageIdMatch[1]);
+          } catch (err) {
+            console.error('Error deleting property image:', err);
+            // Continue even if deletion fails
+          }
+        }
+      }
+      
+      if (deletedCount > 0) {
+        console.log(`🗑️ Deleted ${deletedCount} image(s) from MongoDB for property ${id}`);
+      }
+    }
+    
+    properties.splice(index, 1);
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
     
     console.log('✅ Property deleted:', id);

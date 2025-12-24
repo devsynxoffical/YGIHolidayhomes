@@ -46,6 +46,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [selectedImageCategory, setSelectedImageCategory] = useState('Living Room');
+  const [imageFallbacks, setImageFallbacks] = useState({}); // Store fallback URLs for each image
   
   // Image categories matching the frontend PropertyPhotos component
   const imageCategories = [
@@ -75,46 +76,148 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
       console.log('Loading property for editing:', property);
       console.log('Property images:', property.images);
       
-      // Process images: convert relative paths to MongoDB URLs for preview
-      // But keep them separate so we don't save invalid paths back
-      const processedImages = (property.images || []).map(img => {
+      // Process images: Use stored URLs directly (they should be full URLs from MongoDB)
+      // For old relative paths, we'll try to convert them, but prefer stored full URLs
+      const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
+      
+      const processedImages = (property.images || []).map((img, idx) => {
         const imageUrl = typeof img === 'string' ? img : (img?.url || img);
         
-        // If it's already a full URL, keep it
-        if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
-          return imageUrl;
+        if (!imageUrl || !imageUrl.trim()) return null;
+        
+        const trimmedUrl = imageUrl.trim();
+        
+        // If it's already a full URL (http/https), use it directly
+        if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+          return { original: trimmedUrl, urls: [trimmedUrl] };
         }
         
-        // If it's a MongoDB API path, make it full URL
-        if (imageUrl && imageUrl.includes('/api/images/')) {
-          if (imageUrl.startsWith('/api/images/')) {
-            return `${apiBaseUrl}${imageUrl}`;
-          }
-          return imageUrl;
+        // If it's a MongoDB API path (/api/images/...), make it full URL
+        if (trimmedUrl.includes('/api/images/')) {
+          const fullUrl = trimmedUrl.startsWith('/api/images/') 
+            ? `${apiBaseUrl}${trimmedUrl}`
+            : trimmedUrl.startsWith('api/images/')
+            ? `${apiBaseUrl}/${trimmedUrl}`
+            : trimmedUrl;
+          return { original: trimmedUrl, urls: [fullUrl] };
         }
         
-        // If it's a relative path (old local path), try to convert to MongoDB URL
-        // This is for preview only - we'll filter these out when saving
-        if (imageUrl && (imageUrl.startsWith('./') || !imageUrl.startsWith('http'))) {
-          // Try to construct MongoDB URL from filename
-          const cleanPath = imageUrl.replace(/^\.\//, '').replace(/\\/g, '/');
+        // For old relative paths (starting with ./), try MongoDB first
+        // Only add website URL fallback if not on localhost (to avoid CORS issues)
+        if (trimmedUrl.startsWith('./')) {
+          const cleanPath = trimmedUrl.replace(/^\.\//, '').replace(/\\/g, '/');
           const encodedFilename = encodeURIComponent(cleanPath);
-          return `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
+          const mongoUrl = `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
+          
+          // Only add website URL fallback if not on localhost
+          const urls = [mongoUrl];
+          if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+            const websitePath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+            const websiteFullUrl = `${websiteUrl}${websitePath}`;
+            urls.push(websiteFullUrl);
+          }
+          
+          return { original: trimmedUrl, urls };
         }
         
-        return imageUrl;
-      }).filter(img => img); // Remove any null/undefined
+        // If it's a relative path without ./, try MongoDB
+        // Only add website URL fallback if not on localhost
+        if (!trimmedUrl.startsWith('http') && !trimmedUrl.startsWith('/api')) {
+          const encodedFilename = encodeURIComponent(trimmedUrl);
+          const mongoUrl = `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
+          
+          const urls = [mongoUrl];
+          if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+            const cleanPath = trimmedUrl.startsWith('/') ? trimmedUrl : '/' + trimmedUrl;
+            const websiteFullUrl = `${websiteUrl}${cleanPath}`;
+            urls.push(websiteFullUrl);
+          }
+          
+          return { original: trimmedUrl, urls };
+        }
+        
+        return { original: trimmedUrl, urls: [trimmedUrl] };
+      }).filter(img => img !== null); // Remove any null/undefined
+      
+      // Extract just the URLs for formData (use the first URL of each, which is the preferred one)
+      const imageUrls = processedImages.map(img => img.urls[0]);
+      
+      // Store fallback URLs for error handling
+      const fallbacks = {};
+      processedImages.forEach((img, idx) => {
+        if (img.urls.length > 1) {
+          fallbacks[idx] = img.urls.slice(1); // All URLs except the first
+        }
+      });
+      setImageFallbacks(fallbacks);
+      
+      console.log('Processed images for preview:', processedImages);
+      console.log('Image URLs for formData:', imageUrls);
+      console.log('Image fallbacks:', fallbacks);
       
       setFormData({
-        ...property,
+        title: property.title || '',
+        metaTitle: property.metaTitle || '',
+        metaDescription: property.metaDescription || '',
+        area: property.area || '',
+        bedrooms: property.bedrooms || 2,
+        bathrooms: property.bathrooms || 2,
+        guests: property.guests || 4,
+        beds: property.beds || 3,
+        price: property.price || 0,
+        rating: property.rating || 4.5,
+        location: property.location || '',
         highlights: property.highlights || [],
-        images: processedImages,
+        dtcm: property.dtcm || '',
+        sleeps: property.sleeps || '',
+        featured: property.featured || false,
+        available: property.available !== undefined ? property.available : true,
+        slug: property.slug || '',
+        description: property.description || '',
+        images: imageUrls,
+        space: property.space || { kitchen: '', living: '', facilities: '' },
         sleeping: property.sleeping || [],
         access: property.access || [],
         rules: property.rules || [],
         amenities: property.amenities || [],
-        space: property.space || { kitchen: '', living: '', facilities: '' }
+        guestAccess: property.guestAccess || '',
+        otherNotes: property.otherNotes || '',
+        excludeDiscount: property.excludeDiscount || false,
+        excludeCleaningFee: property.excludeCleaningFee || false
       });
+    } else {
+      // Reset form when no property is selected
+      setFormData({
+        title: '',
+        metaTitle: '',
+        metaDescription: '',
+        area: '',
+        bedrooms: 2,
+        bathrooms: 2,
+        guests: 4,
+        beds: 3,
+        price: 0,
+        rating: 4.5,
+        location: '',
+        highlights: [],
+        dtcm: '',
+        sleeps: '',
+        featured: false,
+        available: true,
+        slug: '',
+        description: '',
+        images: [],
+        space: { kitchen: '', living: '', facilities: '' },
+        sleeping: [],
+        access: [],
+        rules: [],
+        amenities: [],
+        guestAccess: '',
+        otherNotes: '',
+        excludeDiscount: false,
+        excludeCleaningFee: false
+      });
+      setImageFallbacks({});
     }
   }, [property, apiBaseUrl]);
 
@@ -152,7 +255,53 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     }));
   };
 
-  const handleArrayRemove = (field, index) => {
+  const handleArrayRemove = async (field, index) => {
+    // If removing an image, also delete it from MongoDB
+    if (field === 'images') {
+      const imageUrl = formData.images[index];
+      if (imageUrl) {
+        // Extract imageId from URL (format: https://domain/api/images/{imageId})
+        const imageIdMatch = imageUrl.match(/\/api\/images\/([a-fA-F0-9]{24})/);
+        if (imageIdMatch && imageIdMatch[1]) {
+          const imageId = imageIdMatch[1];
+          try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/images/${imageId}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              console.log('✅ Image deleted from MongoDB:', imageId);
+            } else {
+              console.warn('⚠️ Failed to delete image from MongoDB:', imageId);
+            }
+          } catch (err) {
+            console.error('Error deleting image from MongoDB:', err);
+            // Continue with removal from form even if MongoDB deletion fails
+          }
+        }
+      }
+      
+      // Update fallbacks when removing images
+      setImageFallbacks(prev => {
+        const newFallbacks = {};
+        // Reindex fallbacks after removal
+        Object.keys(prev).forEach(key => {
+          const keyNum = parseInt(key);
+          if (keyNum < index) {
+            newFallbacks[keyNum] = prev[key];
+          } else if (keyNum > index) {
+            newFallbacks[keyNum - 1] = prev[key];
+          }
+          // Skip the removed index
+        });
+        return newFallbacks;
+      });
+    }
+    
+    // Remove from form data
     setFormData(prev => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
@@ -228,14 +377,19 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         const data = await response.json();
         setUploadProgress(prev => ({ ...prev, [index]: 100 }));
         
-        // Ensure we have a full URL
+        // Backend should return a full URL, use it directly
+        // Only construct URL if backend returns a relative path (shouldn't happen)
         let imageUrl = data.url;
-        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-          // If it's a relative path, make it absolute
-          if (imageUrl.startsWith('/api/images/')) {
+        if (!imageUrl || (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://'))) {
+          // Fallback: construct full URL if backend didn't return one
+          if (imageUrl && imageUrl.startsWith('/api/images/')) {
             imageUrl = `${apiBaseUrl}${imageUrl}`;
+          } else if (data.imageId) {
+            // Use imageId to construct URL
+            imageUrl = `${apiBaseUrl}/api/images/${data.imageId}`;
           } else {
-            imageUrl = `${apiBaseUrl}/${imageUrl}`;
+            console.error('Invalid image URL from backend:', data);
+            throw new Error('Invalid image URL received from server');
           }
         }
         
@@ -263,6 +417,9 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
           images: updatedImages
         };
       });
+      
+      // Clear fallbacks for newly uploaded images (they're MongoDB URLs, no fallback needed)
+      // Keep existing fallbacks for old images
 
       alert(`✅ Successfully uploaded ${uploadedImages.length} image(s) to MongoDB in "${selectedImageCategory}" category!`);
     } catch (err) {
@@ -745,52 +902,88 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                   return null; // Skip empty images
                 }
                 
-                // Construct full URL for MongoDB images
+                // Get fallback URLs for this image index
+                const fallbackUrls = imageFallbacks[index] || [];
+                
+                // Use the current URL (which is the first in our list)
                 let fullImageUrl = imageUrl.trim();
                 if (!fullImageUrl.startsWith('http://') && !fullImageUrl.startsWith('https://')) {
-                  // It's a relative path - construct full URL
                   if (fullImageUrl.startsWith('/api/images/')) {
                     fullImageUrl = `${apiBaseUrl}${fullImageUrl}`;
-                  } else if (fullImageUrl.startsWith('/')) {
-                    fullImageUrl = `${apiBaseUrl}${fullImageUrl}`;
+                  } else if (fullImageUrl.startsWith('api/images/')) {
+                    fullImageUrl = `${apiBaseUrl}/${fullImageUrl}`;
                   } else {
                     fullImageUrl = `${apiBaseUrl}/${fullImageUrl}`;
                   }
                 }
                 
-                console.log(`Preview image ${index}:`, { original: imageUrl, full: fullImageUrl }); // Debug log
+                // Create a unique key for this image
+                const imageKey = `img-${index}-${fullImageUrl.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '-')}`;
+                
+                // Track tried URLs using a closure
+                const triedUrls = new Set([fullImageUrl]);
+                
+                console.log(`Preview image ${index}:`, { 
+                  original: imageUrl, 
+                  full: fullImageUrl,
+                  fallbacks: fallbackUrls 
+                }); // Debug log
                 
                 return (
-                  <div key={`img-${index}-${imageUrl.substring(0, 20)}`} className="image-preview-item">
+                  <div key={imageKey} className="image-preview-item">
                     <img 
                       src={fullImageUrl}
                       alt={`Preview ${index + 1}`}
                       crossOrigin="anonymous"
-                      onError={(e) => {
-                        console.error(`Failed to load image ${index}:`, {
-                          original: imageUrl,
-                          full: fullImageUrl,
-                          error: 'Image load failed'
-                        });
-                        // Fallback for local images
-                        const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
-                        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/api')) {
-                          const cleanPath = imageUrl.replace(/^\.\//, '');
-                          e.target.src = `${websiteUrl}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
-                        } else {
-                          e.target.src = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
-                        }
-                      }}
-                      onLoad={() => {
-                        console.log(`✅ Successfully loaded image ${index}:`, fullImageUrl);
-                      }}
-                      style={{ 
-                        width: '100%', 
-                        height: '200px', 
+                      style={{
+                        width: '100%',
+                        height: '200px',
                         objectFit: 'cover',
                         borderRadius: '4px',
                         backgroundColor: '#f0f0f0',
                         display: 'block'
+                      }}
+                      onError={(e) => {
+                        const img = e.target;
+                        const currentSrc = img.src;
+                        triedUrls.add(currentSrc);
+                        
+                        // Try fallback URLs if available
+                        if (fallbackUrls.length > 0) {
+                          // Find next URL that we haven't tried yet
+                          const nextUrl = fallbackUrls.find(url => {
+                            try {
+                              const urlObj = new URL(url);
+                              const currentObj = new URL(currentSrc);
+                              return urlObj.href !== currentObj.href && !triedUrls.has(url);
+                            } catch {
+                              return url !== currentSrc && !triedUrls.has(url);
+                            }
+                          });
+                          
+                          if (nextUrl) {
+                            console.log(`Trying fallback URL for image ${index}:`, nextUrl);
+                            triedUrls.add(nextUrl);
+                            img.src = nextUrl;
+                            return; // Try next URL
+                          }
+                        }
+                        
+                        // All URLs failed - show placeholder and prevent further errors
+                        img.onerror = null;
+                        console.error(`Failed to load image ${index} after trying all URLs:`, {
+                          original: imageUrl,
+                          full: fullImageUrl,
+                          fallbacks: fallbackUrls,
+                          triedSrc: currentSrc
+                        });
+                        // Use a data URL for placeholder to avoid network requests
+                        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+                        img.style.objectFit = 'contain';
+                        img.style.backgroundColor = '#f0f0f0';
+                      }}
+                      onLoad={() => {
+                        console.log(`✅ Successfully loaded image ${index}:`, fullImageUrl);
                       }}
                     />
                     <div className="image-preview-overlay">
@@ -801,7 +994,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                           handleArrayRemove('images', index);
                         }}
                         className="image-remove-btn"
-                        title="Remove image"
+                        title="Remove image (will also delete from MongoDB)"
                       >
                         ×
                       </button>

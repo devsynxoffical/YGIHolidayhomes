@@ -5,46 +5,62 @@ import './PropertyList.css';
 const WEBSITE_URL = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
 
 // Helper function to convert relative image paths to absolute URLs
-const getImageUrl = (imagePath, apiBaseUrl) => {
-  if (!imagePath) return '';
+// Returns an array of URLs to try (MongoDB first, then website URL for old paths)
+const getImageUrls = (imagePath, apiBaseUrl) => {
+  if (!imagePath) return [];
   
   // If already an absolute URL (http/https), return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+    return [imagePath];
   }
   
   // If it's a MongoDB image path (/api/images/...)
   if (imagePath.includes('/api/images/')) {
     // Check if it's already a full URL
     if (imagePath.startsWith('http')) {
-      return imagePath;
+      return [imagePath];
     }
     // It's a relative path, construct full URL
-    return `${apiBaseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+    return [`${apiBaseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`];
   }
   
-  // For old relative paths, try to convert to MongoDB URL first
-  // This handles legacy paths that might still be in the database
-  if (imagePath.startsWith('./') || (!imagePath.startsWith('http') && !imagePath.startsWith('/api'))) {
-    // Try to construct MongoDB URL from filename
+  // For old relative paths (starting with ./), try MongoDB first
+  // Only add website URL fallback if not on localhost (to avoid CORS issues)
+  if (imagePath.startsWith('./')) {
     const cleanPath = imagePath.replace(/^\.\//, '').replace(/\\/g, '/');
     const encodedFilename = encodeURIComponent(cleanPath);
-    return `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
+    
+    const urls = [`${apiBaseUrl}/api/images/filename/${encodedFilename}`];
+    
+    // Only add website URL fallback if not on localhost
+    if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+      const websitePath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+      const websiteUrl = `${WEBSITE_URL}${websitePath}`;
+      urls.push(websiteUrl);
+    }
+    
+    return urls; // Try MongoDB first, then website (if not localhost)
   }
   
-  // Convert relative paths (./path) to absolute paths (/path) as fallback
-  let cleanPath = imagePath;
-  if (imagePath.startsWith('./')) {
-    cleanPath = imagePath.substring(1); // Remove ./
+  // If it's not a full URL and not a MongoDB path, try website URL (only if not localhost)
+  if (!imagePath.startsWith('http') && !imagePath.startsWith('/api')) {
+    // On localhost, don't try website URL (will fail CORS)
+    if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+      return []; // Return empty array, will show placeholder
+    }
+    
+    let cleanPath = imagePath;
+    if (cleanPath.startsWith('./')) {
+      cleanPath = cleanPath.substring(1); // Remove ./
+    }
+    // Ensure path starts with /
+    if (!cleanPath.startsWith('/')) {
+      cleanPath = '/' + cleanPath;
+    }
+    return [`${WEBSITE_URL}${cleanPath}`];
   }
   
-  // Ensure path starts with /
-  if (!cleanPath.startsWith('/')) {
-    cleanPath = '/' + cleanPath;
-  }
-  
-  // Return full URL (browser will handle spaces in URLs)
-  return `${WEBSITE_URL}${cleanPath}`;
+  return [];
 };
 
 function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
@@ -159,23 +175,68 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
           {properties.map((property) => (
             <div key={property.id} className="property-card">
               <div className="property-image">
-                {property.images && property.images.length > 0 ? (
-                  <img 
-                    src={getImageUrl(property.images[0], apiBaseUrl)}
-                    alt={property.title}
-                    loading="lazy"
-                    onError={(e) => {
-                      // Try alternative image or show placeholder
-                      if (property.images.length > 1) {
-                        e.target.src = getImageUrl(property.images[1], apiBaseUrl);
-                      } else {
-                        e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+                {(() => {
+                  // Try to find valid image URLs
+                  // For old relative paths, we'll try MongoDB first, then website URL
+                  let allImageUrls = [];
+                  
+                  if (property.images && property.images.length > 0) {
+                    for (const img of property.images) {
+                      const urls = getImageUrls(img, apiBaseUrl);
+                      if (urls.length > 0) {
+                        allImageUrls.push(...urls);
+                        // If we found a MongoDB URL (not from old path), prefer it
+                        const hasMongoUrl = urls.some(url => url.includes('/api/images/') && !url.includes('/api/images/filename/'));
+                        if (hasMongoUrl) {
+                          break; // Found direct MongoDB URL, use it
+                        }
                       }
-                    }}
-                  />
-                ) : (
-                  <div className="no-image">No Image</div>
-                )}
+                    }
+                  }
+                  
+                  // Use first available URL, keep rest for fallback
+                  const finalUrl = allImageUrls[0] || null;
+                  const fallbackUrls = allImageUrls.slice(1);
+                  let triedUrls = new Set([finalUrl]); // Track which URLs we've tried
+                  
+                  if (finalUrl) {
+                    return (
+                      <img 
+                        src={finalUrl}
+                        alt={property.title}
+                        loading="lazy"
+                        onError={(e) => {
+                          // Try next URL in the list if available
+                          const currentSrc = e.target.src;
+                          triedUrls.add(currentSrc);
+                          
+                          // Find next URL we haven't tried
+                          const nextUrl = fallbackUrls.find(url => !triedUrls.has(url));
+                          
+                          if (nextUrl) {
+                            // Try next URL
+                            triedUrls.add(nextUrl);
+                            e.target.src = nextUrl;
+                            return;
+                          }
+                          
+                          // All URLs failed - show placeholder and prevent further errors
+                          e.target.onerror = null; // Remove error handler to prevent loop
+                          // Use a data URL for placeholder to avoid network requests
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+                          e.target.style.objectFit = 'contain';
+                          e.target.style.backgroundColor = '#f0f0f0';
+                        }}
+                        onLoad={(e) => {
+                          // Image loaded successfully
+                          console.log('✅ Image loaded:', finalUrl);
+                        }}
+                      />
+                    );
+                  } else {
+                    return <div className="no-image">No Image Available</div>;
+                  }
+                })()}
                 {property.featured && <span className="featured-badge">Featured</span>}
                 {!property.available && <span className="unavailable-badge">Unavailable</span>}
               </div>
