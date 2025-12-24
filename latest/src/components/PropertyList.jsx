@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './PropertyList.css';
 
 // Website URL where images are hosted
@@ -196,40 +196,58 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
                   
                   // Use first available URL, keep rest for fallback
                   const finalUrl = allImageUrls[0] || null;
-                  const fallbackUrls = allImageUrls.slice(1);
-                  let triedUrls = new Set([finalUrl]); // Track which URLs we've tried
+                  
+                  // Debug logging
+                  if (finalUrl) {
+                    console.log(`🖼️ Property "${property.title}" - Trying image URL:`, finalUrl);
+                    if (allImageUrls.length > 1) {
+                      console.log(`   ${allImageUrls.length - 1} fallback URL(s) available`);
+                    }
+                  } else {
+                    console.warn(`⚠️ Property "${property.title}" - No image URLs found. Images:`, property.images);
+                  }
                   
                   if (finalUrl) {
+                    // Create a unique key for this image to track retries
+                    const imageKey = `img-${property.id}-${finalUrl.substring(0, 50).replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    
                     return (
                       <img 
+                        key={imageKey}
                         src={finalUrl}
                         alt={property.title}
                         loading="lazy"
+                        data-fallback-urls={JSON.stringify(allImageUrls.slice(1))}
+                        data-tried-index="0"
                         onError={(e) => {
+                          const img = e.target;
+                          const currentSrc = img.src;
+                          const fallbackUrls = JSON.parse(img.getAttribute('data-fallback-urls') || '[]');
+                          let triedIndex = parseInt(img.getAttribute('data-tried-index') || '0');
+                          
+                          console.warn(`❌ Failed to load image for "${property.title}":`, currentSrc);
+                          
                           // Try next URL in the list if available
-                          const currentSrc = e.target.src;
-                          triedUrls.add(currentSrc);
-                          
-                          // Find next URL we haven't tried
-                          const nextUrl = fallbackUrls.find(url => !triedUrls.has(url));
-                          
-                          if (nextUrl) {
-                            // Try next URL
-                            triedUrls.add(nextUrl);
-                            e.target.src = nextUrl;
-                            return;
+                          if (triedIndex < fallbackUrls.length) {
+                            const nextUrl = fallbackUrls[triedIndex];
+                            triedIndex++;
+                            img.setAttribute('data-tried-index', triedIndex.toString());
+                            console.log(`🔄 Trying fallback URL ${triedIndex}/${fallbackUrls.length}:`, nextUrl);
+                            img.src = nextUrl;
+                            return; // Try next URL
                           }
                           
                           // All URLs failed - show placeholder and prevent further errors
-                          e.target.onerror = null; // Remove error handler to prevent loop
+                          img.onerror = null; // Remove error handler to prevent loop
+                          console.error(`❌ All image URLs failed for "${property.title}". Tried ${triedIndex + 1} URL(s)`);
                           // Use a data URL for placeholder to avoid network requests
-                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
-                          e.target.style.objectFit = 'contain';
-                          e.target.style.backgroundColor = '#f0f0f0';
+                          img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+                          img.style.objectFit = 'contain';
+                          img.style.backgroundColor = '#f0f0f0';
                         }}
                         onLoad={(e) => {
                           // Image loaded successfully
-                          console.log('✅ Image loaded:', finalUrl);
+                          console.log(`✅ Image loaded for "${property.title}":`, e.target.src);
                         }}
                       />
                     );

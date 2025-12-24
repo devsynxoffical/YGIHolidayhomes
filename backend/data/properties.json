@@ -12,12 +12,12 @@
     "price": 2500,
     "rating": 4.9,
     "images": [
-      "./Marina residency tower 2/Living room/85a505d4-a5e9-4622-9ef3-ad8db3584b31.avif",
-      "./Marina residency tower 2/Living room/0111eadd-7b05-4a99-841d-100a4f6b1e2a.avif",
-      "./Marina residency tower 2/Exterior/0b0b4845-b6ea-4bf9-93be-e8f5a8aa17d9.avif",
-      "./Marina residency tower 2/BR1/578706d0-8963-4cfa-a62c-d8e3a6ed9f2d.avif",
-      "./Marina residency tower 2/BR2/57f183de-ff1b-4e07-acef-7426e0d7692f.avif",
-      "./Marina residency tower 2/Full kitchen/7c30deba-b07f-48ec-8db0-3b5f6d059302.avif"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74c608576ef1f7fb71fa",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74c508576ef1f7fb71f2",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74be08576ef1f7fb71d2",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74bb08576ef1f7fb71c4",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74bd08576ef1f7fb71ca",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74c408576ef1f7fb71ec"
     ],
     "location": "Marina Residence 2, Palm Jumeirah",
     "highlights": [
@@ -189,11 +189,11 @@
     "price": 1600,
     "rating": 4.8,
     "images": [
-      "./2BR in Princess Tower  Furnished  Close to Metro/Living Room/12996379-3a7c-46ce-bb22-678686ede8f9.jpeg",
-      "./2BR in Princess Tower  Furnished  Close to Metro/BR1/188031da-df38-49ab-ac71-ccdd65a7c1e4.jpeg",
-      "./2BR in Princess Tower  Furnished  Close to Metro/BR2/027f21fd-508e-4174-a894-fe6eb0a9b03e.avif",
-      "./2BR in Princess Tower  Furnished  Close to Metro/kitchen/01695d3d-0834-4278-8fb7-4e894ba2f90c.avif",
-      "./2BR in Princess Tower  Furnished  Close to Metro/Balcony/0122b155-7516-46f9-b4d0-d86d930260e0.avif"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745608576ef1f7fb6f80",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c744f08576ef1f7fb6f5c",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745108576ef1f7fb6f66",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745508576ef1f7fb6f7c",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c744c08576ef1f7fb6f4e"
     ],
     "location": "Princess Tower, Dubai Marina",
     "highlights": [
@@ -367,11 +367,11 @@
     "price": 1700,
     "rating": 4.7,
     "images": [
-      "./Bright & comfy 2br Dora Bay/Living room/0ff58bc5-ec1f-4c92-ac95-75812ebbcb45.avif",
-      "./Bright & comfy 2br Dora Bay/BR1/19e53c20-071e-4b1b-aabf-c65f2815002d.avif",
-      "./Bright & comfy 2br Dora Bay/BR2/86661bc8-56b7-4f29-bc5f-6642a40b5ea0.avif",
-      "./Bright & comfy 2br Dora Bay/Full kitchen/5690134c-bea5-4d0c-bd3a-94283cf06da2.avif",
-      "./Bright & comfy 2br Dora Bay/Exterior/06938194-63f7-458e-9781-ea4dea29fd89.avif"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c746908576ef1f7fb6fea",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745e08576ef1f7fb6fa8",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745f08576ef1f7fb6fb0",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c746908576ef1f7fb6fe6",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c746308576ef1f7fb6fc4"
     ],
     "location": "Dorra Bay Tower, Dubai Marina",
     "highlights": [
@@ -528,11 +528,11 @@
     "excludeDiscount": true,
     "excludeCleaningFee": true,
     "images": [
-      "./Family friendly 2BR/Living room/019dc95c-c729-483a-96d6-a128b6f687f2.avif",
-      "./Family friendly 2BR/BR1/0b4b2bee-acb3-4a20-8840-7c25e3430091.avif",
-      "./Family friendly 2BR/BR2/23b7f932-754d-4806-a03b-313f01a74ff0.jpeg",
-      "./Family friendly 2BR/Full kitchen/49d859af-f75a-4849-a1c8-3a893b0526e2.avif",
-      "./Family friendly 2BR/Exterior/0a2c520f-bf3d-48ee-b9df-356c719032ea.avif"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748d08576ef1f7fb70b0",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748208576ef1f7fb7072",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748508576ef1f7fb7080",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748d08576ef1f7fb70ac",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748a08576ef1f7fb709e"
     ],
     "location": "Princess Tower, Dubai Marina",
     "highlights": [
@@ -711,11 +711,11 @@
     "price": 1600,
     "rating": 4.8,
     "images": [
-      "./Higher floor 2br princess tower/Living room/640af4c4-37e2-4a69-a4b7-2dc6f8055df0.avif",
-      "./Higher floor 2br princess tower/BR1/2a4190c5-38f5-4634-8c93-342fa74899d1.avif",
-      "./Higher floor 2br princess tower/BR2/149f712f-f3d8-491f-aa92-b100b300cd19.jpeg",
-      "./Higher floor 2br princess tower/Full kitchen/7223fb7f-3f3c-4f85-ac8f-5606f529e36a.avif",
-      "./Higher floor 2br princess tower/Exterior/0691774f-41bb-45c5-9c9d-e856f66b152a.avif"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c749e08576ef1f7fb7108",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c749508576ef1f7fb70d6",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c749608576ef1f7fb70dc",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c749d08576ef1f7fb7102",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c749908576ef1f7fb70ee"
     ],
     "location": "Princess Tower, Dubai Marina",
     "highlights": [
@@ -878,11 +878,11 @@
     "price": 1800,
     "rating": 4.5,
     "images": [
-      "./Urban retreat/Living room/87d3c2b9-2247-4a49-b7ac-7180086497bd.avif",
-      "./Urban retreat/BR1/40c869fa-b3ac-4570-900e-55d35a6c016f.avif",
-      "./Urban retreat/BR2/8347969d-1607-4c59-8719-bcd0b39f2c87.avif",
-      "./Urban retreat/Full kitchen/5f34cb21-ab82-4a39-80ca-2a57b411ae45.jpeg",
-      "./Urban retreat/Exterior/042aa7fa-b004-4569-9667-9e9096f8530b.jpeg"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74d708576ef1f7fb725a",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74ce08576ef1f7fb7226",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74d008576ef1f7fb722e",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74d608576ef1f7fb7254",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74d408576ef1f7fb7246"
     ],
     "location": "Urban Oasis by Missoni",
     "highlights": [
@@ -1057,13 +1057,13 @@
     "price": 1800,
     "rating": 5,
     "images": [
-      "./downtown-standpoint-tower/living-room/286952df-362f-44c6-8e40-717697937f95.avif",
-      "./downtown-standpoint-tower/bedroom-1/2eb77e31-56cb-4ea3-af60-0d92560ff268.avif",
-      "./downtown-standpoint-tower/bedroom-2/06664f70-91dc-4013-b2fe-6aae1f7e8417.avif",
-      "./downtown-standpoint-tower/kitchen/39b1c808-2511-4918-957f-f6819e539dc8.avif",
-      "./downtown-standpoint-tower/balcony/213690ff-21a8-43c1-8cbc-121c887da372.avif",
-      "./downtown-standpoint-tower/balcony/b1.jpeg",
-      "./downtown-standpoint-tower/balcony/b2.jpeg"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748008576ef1f7fb7068",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c747f08576ef1f7fb7062",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748008576ef1f7fb7064",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c748008576ef1f7fb7066",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c747e08576ef1f7fb705a",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c747e08576ef1f7fb705c",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c747f08576ef1f7fb705f"
     ],
     "location": "Standpoint Tower A, Downtown Dubai",
     "highlights": [
