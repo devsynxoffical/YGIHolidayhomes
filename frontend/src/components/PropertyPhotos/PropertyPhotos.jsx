@@ -589,7 +589,8 @@ const PropertyPhotos = ({ property, onNavigate }) => {
       <div className="photos-header">
         <button
           className="back-btn"
-          onClick={() => onNavigate('property-details')}
+          onClick={() => onNavigate('book')}
+          aria-label="Back to properties"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />

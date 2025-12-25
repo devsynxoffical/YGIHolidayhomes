@@ -65,12 +65,26 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     onBookNow(paymentData);
   };
 
+  const handleBackClick = () => {
+    if (onNavigate) {
+      onNavigate('book');
+    }
+  };
+
   if (!property) {
     return <div className="property-loading">Loading property details...</div>;
   }
 
   return (
     <div className="property-details-page">
+      {/* Back Button */}
+      <button className="back-button" onClick={handleBackClick} aria-label="Back to properties">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        <span>Back to Properties</span>
+      </button>
+
       {/* Hero Section - Image Grid */}
       <section className="property-hero">
         <div className="property-gallery-grid">

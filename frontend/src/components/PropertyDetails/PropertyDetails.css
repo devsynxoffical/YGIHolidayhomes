@@ -7,6 +7,45 @@
   padding: 20px 40px;
   font-family: 'Outfit', sans-serif;
   color: #222;
+  position: relative;
+}
+
+/* Back Button */
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.2s ease;
+  font-family: 'Outfit', sans-serif;
+}
+
+.back-button:hover {
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+  transform: translateX(-2px);
+}
+
+.back-button:active {
+  transform: translateX(0);
+}
+
+.back-button svg {
+  width: 18px;
+  height: 18px;
+  color: #666;
+}
+
+.back-button:hover svg {
+  color: #333;
 }
 
 /* Hero / Gallery */
