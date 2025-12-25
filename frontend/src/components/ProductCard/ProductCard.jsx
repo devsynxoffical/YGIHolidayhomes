@@ -35,13 +35,11 @@ const ProductCard = ({ product, onNavigate }) => {
           src={getImageUrlWithFallback(product.image || (product.images && product.images[0]))} 
           alt={product.name}
           className="product-image"
+          crossOrigin="anonymous"
           onError={(e) => {
-            // Fallback to local path if MongoDB fails
-            const fallback = product.image || (product.images && product.images[0]);
-            if (fallback && !fallback.startsWith('http')) {
-              const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
-              e.target.src = `${websiteUrl}/${fallback.replace(/^\.\//, '')}`;
-            }
+            // Fallback to placeholder if all attempts fail
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+            e.target.style.objectFit = 'contain';
           }}
         />
         

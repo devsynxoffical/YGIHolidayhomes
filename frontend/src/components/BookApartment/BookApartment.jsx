@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import { useProperties } from '../../contexts/PropertiesContext';
+import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import './BookApartment.css';
 
 const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) => {
@@ -644,10 +645,23 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
 
 // Property Card Component
 const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
+  const imageUrl = property.images && property.images.length > 0 
+    ? getImageUrlWithFallback(property.images[0]) 
+    : '';
+
   return (
     <article className="property-card">
       <div className="property-image">
-        <img src={property.images[0]} alt={property.title} />
+        <img 
+          src={imageUrl} 
+          alt={property.title}
+          crossOrigin="anonymous"
+          onError={(e) => {
+            // Fallback to placeholder if all attempts fail
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+            e.target.style.objectFit = 'contain';
+          }}
+        />
         {property.featured && <span className="badge featured">Featured</span>}
         <div className="rating-badge">
           <span className="star">★</span>
