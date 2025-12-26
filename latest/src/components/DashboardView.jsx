@@ -22,10 +22,11 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
     monthlyRevenue: 8454.43,
   };
 
-  const [statistics, setStatistics] = useState(DUMMY_STATISTICS);
-  const [loading, setLoading] = useState(false);
+  const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [usingDummyData, setUsingDummyData] = useState(true);
+  const [usingDummyData, setUsingDummyData] = useState(false);
+  const [hasTriedFetch, setHasTriedFetch] = useState(false);
 
   useEffect(() => {
     fetchStatistics();
@@ -44,7 +45,7 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch statistics');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -52,21 +53,27 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         setStatistics(data.statistics);
         setUsingDummyData(false);
         setError('');
+        setHasTriedFetch(true);
       } else {
         throw new Error('Invalid response format');
       }
     } catch (err) {
       console.error('Error fetching statistics:', err);
-      // Use dummy data when backend is not available
-      setStatistics(DUMMY_STATISTICS);
-      setUsingDummyData(true);
-      setError('Using demo data (backend not connected)');
+      setHasTriedFetch(true);
+      
+      // Only use dummy data if we've tried to fetch and failed
+      if (!statistics) {
+        setStatistics(DUMMY_STATISTICS);
+        setUsingDummyData(true);
+        setError('Backend connection failed - using demo data');
+      }
+      // If we already have real data, keep it and just log the error
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !statistics) {
+  if (loading && !statistics && !hasTriedFetch) {
     return (
       <div className="dashboard-welcome">
         <div className="loading-state">Loading dashboard...</div>
@@ -104,17 +111,17 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           {error}
         </div>
       )}
-      {usingDummyData && (
+      {usingDummyData && hasTriedFetch && (
         <div style={{ 
-          backgroundColor: '#d1ecf1',
-          color: '#0c5460',
-          border: '1px solid #bee5eb',
+          backgroundColor: '#fff3cd',
+          color: '#856404',
+          border: '1px solid #ffc107',
           padding: '8px 12px',
           borderRadius: '4px',
           marginBottom: '20px',
           fontSize: '14px'
         }}>
-          ℹ️ Using demo data (backend not connected)
+          ⚠️ {error || 'Backend not connected - showing demo data'}
         </div>
       )}
 

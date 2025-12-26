@@ -152,10 +152,10 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
     }
   ];
 
-  const [properties, setProperties] = useState(DUMMY_PROPERTIES);
-  const [loading, setLoading] = useState(false);
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [usingDummyData, setUsingDummyData] = useState(true);
+  const [usingDummyData, setUsingDummyData] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
@@ -187,12 +187,18 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       }
     } catch (err) {
       const errorMsg = err.message || 'Failed to load properties';
-      // Use dummy data when backend is not available
-      setProperties(DUMMY_PROPERTIES);
-      setUsingDummyData(true);
-      setError('Using demo data (backend not connected)');
       console.error('Error fetching properties:', err);
       console.error('API URL:', `${apiBaseUrl}/api/admin/properties`);
+      
+      // Only use dummy data if we have no properties and backend failed
+      if (properties.length === 0) {
+        setProperties(DUMMY_PROPERTIES);
+        setUsingDummyData(true);
+        setError('Backend connection failed - using demo data');
+      } else {
+        // Keep existing properties and show error
+        setError(`Failed to refresh: ${errorMsg}`);
+      }
     } finally {
       setLoading(false);
     }
