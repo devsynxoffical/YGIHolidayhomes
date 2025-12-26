@@ -784,14 +784,14 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Calculate statistics from bookings
-    const totalBookings = bookings.length;
-    const currentBookings = bookings.filter(b => {
+    // Calculate statistics from bookings file
+    let totalBookingsFromFile = bookings.length;
+    let currentBookingsFromFile = bookings.filter(b => {
       const bookingDate = new Date(b.bookingDate);
       return bookingDate >= thirtyDaysAgo;
     }).length;
 
-    // Calculate revenue from bookings
+    // Calculate revenue from bookings file
     let totalRevenue = 0;
     let monthlyRevenue = 0;
 
@@ -806,22 +806,56 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
       }
     });
 
-    // Also try to get additional data from Stripe if available
+    // Also get data from Stripe to get complete picture
+    let stripeBookingsCount = 0;
+    let stripeCurrentBookingsCount = 0;
+    const bookingsPaymentIntentIds = new Set(bookings.map(b => b.paymentIntentId).filter(id => id));
+    
     try {
-      const paymentIntents = await stripe.paymentIntents.list({
-        limit: 100,
-      });
+      // Fetch all payment intents (paginate if needed for complete data)
+      let allPaymentIntents = [];
+      let hasMore = true;
+      let startingAfter = null;
+      
+      while (hasMore) {
+        const params = { limit: 100 };
+        if (startingAfter) {
+          params.starting_after = startingAfter;
+        }
+        
+        const paymentIntents = await stripe.paymentIntents.list(params);
+        allPaymentIntents = allPaymentIntents.concat(paymentIntents.data);
+        
+        hasMore = paymentIntents.has_more;
+        if (hasMore && paymentIntents.data.length > 0) {
+          startingAfter = paymentIntents.data[paymentIntents.data.length - 1].id;
+        } else {
+          hasMore = false;
+        }
+        
+        // Safety limit: don't fetch more than 1000 payment intents
+        if (allPaymentIntents.length >= 1000) {
+          hasMore = false;
+        }
+      }
 
-      // Add any Stripe payments that aren't in bookings file
-      paymentIntents.data.forEach(pi => {
+      // Count all successful Stripe payments as bookings (only if not already in bookings file)
+      allPaymentIntents.forEach(pi => {
         if (pi.status === 'succeeded') {
           const amount = pi.amount / 100;
           const created = new Date(pi.created * 1000);
           
-          // Check if this payment intent is already in bookings
-          const existsInBookings = bookings.some(b => b.paymentIntentId === pi.id);
+          // Check if this payment intent is already in bookings file
+          const existsInBookings = bookingsPaymentIntentIds.has(pi.id);
           
           if (!existsInBookings) {
+            // Count as booking (not in bookings file)
+            stripeBookingsCount++;
+            if (created >= thirtyDaysAgo) {
+              stripeCurrentBookingsCount++;
+            }
+            
+            // Add revenue
             totalRevenue += amount;
             if (created >= startOfMonth) {
               monthlyRevenue += amount;
@@ -831,8 +865,12 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
       });
     } catch (stripeError) {
       console.warn('Could not fetch Stripe statistics:', stripeError.message);
-      // Continue with bookings data only
+      // Continue with bookings file data only
     }
+
+    // Total bookings = bookings from file + Stripe payments not in file (no double counting)
+    const totalBookings = totalBookingsFromFile + stripeBookingsCount;
+    const currentBookings = currentBookingsFromFile + stripeCurrentBookingsCount;
 
     res.json({
       success: true,
