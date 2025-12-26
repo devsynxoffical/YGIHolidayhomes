@@ -240,6 +240,7 @@ app.post('/create-booking', async (req, res) => {
   try {
     const {
       paymentIntentId,
+      propertyId,
       propertyName,
       checkIn,
       checkOut,
@@ -259,26 +260,50 @@ app.post('/create-booking', async (req, res) => {
       });
     }
 
-    // Create booking record (in a real app, save to database)
+    // Read existing bookings
+    let bookings = [];
+    try {
+      const bookingsData = await fs.readFile(BOOKINGS_FILE, 'utf8');
+      bookings = JSON.parse(bookingsData);
+    } catch (error) {
+      // File doesn't exist yet, start with empty array
+      bookings = [];
+    }
+
+    // Calculate nights
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+
+    // Create booking record
     const booking = {
-      id: `booking_${Date.now()}`,
+      id: `booking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       paymentIntentId,
-      propertyName,
+      propertyId: propertyId || null,
+      propertyTitle: propertyName,
+      guestName,
+      guestEmail: email,
+      phone: phone || null,
       checkIn,
       checkOut,
-      guests,
-      totalAmount,
-      guestName,
-      email,
-      phone,
+      nights,
+      guests: guests || 1,
+      totalAmount: parseFloat(totalAmount),
       status: 'confirmed',
+      paymentStatus: 'paid',
+      bookingDate: new Date().toISOString(),
       createdAt: new Date().toISOString()
     };
 
-    // In production, save to database here
-    console.log('📋 Booking created:', booking);
+    // Add to bookings array
+    bookings.push(booking);
+
+    // Save to file
+    await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
+
+    console.log('📋 Booking created and saved:', booking.id);
     console.log('📊 Booking details for Google Sheets:', {
-      propertyId: req.body.propertyId || 'Unknown',
+      propertyId: propertyId || 'Unknown',
       propertyName: propertyName,
       guestName: guestName,
       email: email,
@@ -354,6 +379,8 @@ const authenticateAdmin = (req, res, next) => {
 
 // Properties file path
 const PROPERTIES_FILE = path.join(__dirname, 'data', 'properties.json');
+// Bookings file path
+const BOOKINGS_FILE = path.join(__dirname, 'data', 'bookings.json');
 
 // Ensure data directory exists
 const ensureDataDirectory = async () => {
@@ -743,48 +770,68 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
       ? properties.filter(p => p.available !== false).length 
       : 0;
 
-    // Get booking statistics from Stripe
-    let totalBookings = 0;
-    let currentBookings = 0;
+    // Get bookings from file
+    let bookings = [];
+    try {
+      const bookingsData = await fs.readFile(BOOKINGS_FILE, 'utf8').catch(() => '[]');
+      bookings = JSON.parse(bookingsData);
+    } catch (error) {
+      bookings = [];
+    }
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Calculate statistics from bookings
+    const totalBookings = bookings.length;
+    const currentBookings = bookings.filter(b => {
+      const bookingDate = new Date(b.bookingDate);
+      return bookingDate >= thirtyDaysAgo;
+    }).length;
+
+    // Calculate revenue from bookings
     let totalRevenue = 0;
     let monthlyRevenue = 0;
-    
+
+    bookings.forEach(booking => {
+      if (booking.paymentStatus === 'paid' || booking.status === 'confirmed') {
+        totalRevenue += booking.totalAmount || 0;
+        
+        const bookingDate = new Date(booking.bookingDate);
+        if (bookingDate >= startOfMonth) {
+          monthlyRevenue += booking.totalAmount || 0;
+        }
+      }
+    });
+
+    // Also try to get additional data from Stripe if available
     try {
-      // Get all payment intents (succeeded ones are bookings)
       const paymentIntents = await stripe.paymentIntents.list({
         limit: 100,
       });
 
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      
-      totalBookings = paymentIntents.data.filter(pi => pi.status === 'succeeded').length;
-      
-      // Calculate current bookings (check-ins in the future or recent past)
-      // For now, we'll estimate based on recent payments
-      const recentPayments = paymentIntents.data.filter(pi => {
-        if (pi.status !== 'succeeded') return false;
-        const created = new Date(pi.created * 1000);
-        const daysSince = (now - created) / (1000 * 60 * 60 * 24);
-        return daysSince <= 30; // Bookings in last 30 days
-      });
-      currentBookings = recentPayments.length;
-
-      // Calculate revenue
+      // Add any Stripe payments that aren't in bookings file
       paymentIntents.data.forEach(pi => {
         if (pi.status === 'succeeded') {
-          const amount = pi.amount / 100; // Convert from cents
-          totalRevenue += amount;
-          
+          const amount = pi.amount / 100;
           const created = new Date(pi.created * 1000);
-          if (created >= startOfMonth) {
-            monthlyRevenue += amount;
+          
+          // Check if this payment intent is already in bookings
+          const existsInBookings = bookings.some(b => b.paymentIntentId === pi.id);
+          
+          if (!existsInBookings) {
+            totalRevenue += amount;
+            if (created >= startOfMonth) {
+              monthlyRevenue += amount;
+            }
           }
         }
       });
     } catch (stripeError) {
       console.warn('Could not fetch Stripe statistics:', stripeError.message);
-      // Continue with zero values if Stripe fails
+      // Continue with bookings data only
     }
 
     res.json({
@@ -801,6 +848,212 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error fetching statistics:', error);
     res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Get all bookings (admin endpoint)
+app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
+  try {
+    const { filter } = req.query; // 'all', 'current', 'confirmed', 'pending'
+    
+    // Read bookings from file
+    let bookings = [];
+    try {
+      const bookingsData = await fs.readFile(BOOKINGS_FILE, 'utf8').catch(() => '[]');
+      bookings = JSON.parse(bookingsData);
+    } catch (error) {
+      bookings = [];
+    }
+
+    // Also get bookings from Stripe payment intents and merge
+    try {
+      const paymentIntents = await stripe.paymentIntents.list({
+        limit: 100,
+      });
+
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      paymentIntents.data.forEach(pi => {
+        if (pi.status === 'succeeded') {
+          // Check if already in bookings
+          const exists = bookings.some(b => b.paymentIntentId === pi.id);
+          
+          if (!exists && pi.metadata) {
+            // Create booking from Stripe metadata if available
+            const booking = {
+              id: `stripe_${pi.id}`,
+              paymentIntentId: pi.id,
+              propertyId: pi.metadata.propertyId || null,
+              propertyTitle: pi.metadata.propertyName || 'Unknown Property',
+              guestName: pi.metadata.guestName || 'Unknown Guest',
+              guestEmail: pi.metadata.email || pi.receipt_email || 'unknown@email.com',
+              phone: pi.metadata.phone || null,
+              checkIn: pi.metadata.checkIn || null,
+              checkOut: pi.metadata.checkOut || null,
+              nights: pi.metadata.nights ? parseInt(pi.metadata.nights) : 1,
+              guests: pi.metadata.guests ? parseInt(pi.metadata.guests) : 1,
+              totalAmount: pi.amount / 100,
+              status: 'confirmed',
+              paymentStatus: 'paid',
+              bookingDate: new Date(pi.created * 1000).toISOString(),
+              createdAt: new Date(pi.created * 1000).toISOString()
+            };
+            bookings.push(booking);
+          }
+        }
+      });
+    } catch (stripeError) {
+      console.warn('Could not fetch Stripe bookings:', stripeError.message);
+    }
+
+    // Sort by booking date (newest first)
+    bookings.sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate));
+
+    // Apply filters
+    let filteredBookings = bookings;
+    if (filter === 'current') {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      filteredBookings = bookings.filter(b => {
+        const bookingDate = new Date(b.bookingDate);
+        return bookingDate >= thirtyDaysAgo;
+      });
+    } else if (filter === 'confirmed') {
+      filteredBookings = bookings.filter(b => b.status === 'confirmed');
+    } else if (filter === 'pending') {
+      filteredBookings = bookings.filter(b => b.status === 'pending');
+    }
+
+    res.json({
+      success: true,
+      bookings: filteredBookings,
+      total: filteredBookings.length
+    });
+  } catch (error) {
+    console.error('Error fetching bookings:', error);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// Get revenue data (admin endpoint)
+app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
+  try {
+    // Read bookings from file
+    let bookings = [];
+    try {
+      const bookingsData = await fs.readFile(BOOKINGS_FILE, 'utf8').catch(() => '[]');
+      bookings = JSON.parse(bookingsData);
+    } catch (error) {
+      bookings = [];
+    }
+
+    // Also get from Stripe
+    let stripeTransactions = [];
+    try {
+      const paymentIntents = await stripe.paymentIntents.list({
+        limit: 100,
+      });
+      
+      stripeTransactions = paymentIntents.data
+        .filter(pi => pi.status === 'succeeded')
+        .map(pi => ({
+          id: `stripe_${pi.id}`,
+          date: new Date(pi.created * 1000).toISOString().split('T')[0],
+          property: pi.metadata?.propertyName || 'Unknown Property',
+          amount: pi.amount / 100,
+          type: 'booking',
+          paymentIntentId: pi.id
+        }));
+    } catch (stripeError) {
+      console.warn('Could not fetch Stripe revenue:', stripeError.message);
+    }
+
+    // Combine bookings and Stripe transactions
+    const allTransactions = [
+      ...bookings
+        .filter(b => b.paymentStatus === 'paid' || b.status === 'confirmed')
+        .map(b => ({
+          id: b.id,
+          date: b.bookingDate.split('T')[0],
+          property: b.propertyTitle || 'Unknown Property',
+          amount: b.totalAmount || 0,
+          type: 'booking',
+          paymentIntentId: b.paymentIntentId
+        })),
+      ...stripeTransactions.filter(st => 
+        !bookings.some(b => b.paymentIntentId === st.paymentIntentId)
+      )
+    ];
+
+    // Calculate totals
+    const totalRevenue = allTransactions.reduce((sum, t) => sum + t.amount, 0);
+    
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthlyTransactions = allTransactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate >= startOfMonth;
+    });
+    const monthlyRevenue = monthlyTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+    // Monthly breakdown
+    const monthlyBreakdown = {};
+    allTransactions.forEach(t => {
+      const date = new Date(t.date);
+      const monthKey = `${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`;
+      if (!monthlyBreakdown[monthKey]) {
+        monthlyBreakdown[monthKey] = { revenue: 0, bookings: 0 };
+      }
+      monthlyBreakdown[monthKey].revenue += t.amount;
+      monthlyBreakdown[monthKey].bookings += 1;
+    });
+
+    const monthlyBreakdownArray = Object.entries(monthlyBreakdown)
+      .map(([month, data]) => ({
+        month,
+        revenue: Math.round(data.revenue * 100) / 100,
+        bookings: data.bookings
+      }))
+      .sort((a, b) => {
+        const dateA = new Date(a.month);
+        const dateB = new Date(b.month);
+        return dateB - dateA;
+      });
+
+    // Property breakdown
+    const propertyBreakdown = {};
+    allTransactions.forEach(t => {
+      const property = t.property;
+      if (!propertyBreakdown[property]) {
+        propertyBreakdown[property] = { revenue: 0, bookings: 0 };
+      }
+      propertyBreakdown[property].revenue += t.amount;
+      propertyBreakdown[property].bookings += 1;
+    });
+
+    const propertyBreakdownArray = Object.entries(propertyBreakdown)
+      .map(([property, data]) => ({
+        property,
+        revenue: Math.round(data.revenue * 100) / 100,
+        bookings: data.bookings
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    res.json({
+      success: true,
+      revenue: {
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
+        transactions: allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date)),
+        monthlyBreakdown: monthlyBreakdownArray,
+        propertyBreakdown: propertyBreakdownArray
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching revenue data:', error);
+    res.status(500).json({ error: 'Failed to fetch revenue data' });
   }
 });
 

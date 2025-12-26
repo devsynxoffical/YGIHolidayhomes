@@ -12,9 +12,20 @@ const {
 } = FaIcons;
 
 function DashboardView({ apiBaseUrl, token, onViewChange }) {
-  const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Dummy data for when backend is not connected
+  const DUMMY_STATISTICS = {
+    totalProperties: 7,
+    availableProperties: 7,
+    totalBookings: 82,
+    currentBookings: 10,
+    totalRevenue: 99754.43,
+    monthlyRevenue: 8454.43,
+  };
+
+  const [statistics, setStatistics] = useState(DUMMY_STATISTICS);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [usingDummyData, setUsingDummyData] = useState(true);
 
   useEffect(() => {
     fetchStatistics();
@@ -37,11 +48,19 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
       }
 
       const data = await response.json();
-      setStatistics(data.statistics);
-      setError('');
+      if (data.success && data.statistics) {
+        setStatistics(data.statistics);
+        setUsingDummyData(false);
+        setError('');
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
       console.error('Error fetching statistics:', err);
-      setError('Failed to load statistics');
+      // Use dummy data when backend is not available
+      setStatistics(DUMMY_STATISTICS);
+      setUsingDummyData(true);
+      setError('Using demo data (backend not connected)');
     } finally {
       setLoading(false);
     }
@@ -55,13 +74,15 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
     );
   }
 
-  const stats = statistics || {
-    totalProperties: 0,
-    availableProperties: 0,
-    totalBookings: 0,
-    currentBookings: 0,
-    totalRevenue: 0,
-    monthlyRevenue: 0,
+  const stats = statistics || DUMMY_STATISTICS;
+
+  // Helper function to format currency safely
+  const formatCurrency = (value) => {
+    const num = typeof value === 'number' ? value : parseFloat(value) || 0;
+    return num.toLocaleString('en-US', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
   };
 
   return (
@@ -71,9 +92,29 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         <p>Welcome to YGI Holiday Homes Admin Panel</p>
       </div>
 
-      {error && (
-        <div className="error-banner">
+      {error && !usingDummyData && (
+        <div className="error-banner" style={{ 
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          border: '1px solid #f5c6cb',
+          padding: '12px',
+          borderRadius: '4px',
+          marginBottom: '20px'
+        }}>
           {error}
+        </div>
+      )}
+      {usingDummyData && (
+        <div style={{ 
+          backgroundColor: '#d1ecf1',
+          color: '#0c5460',
+          border: '1px solid #bee5eb',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          marginBottom: '20px',
+          fontSize: '14px'
+        }}>
+          ℹ️ Using demo data (backend not connected)
         </div>
       )}
 
@@ -84,8 +125,8 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           </div>
           <div className="stat-content">
             <h3>Total Properties</h3>
-            <p className="stat-value">{stats.totalProperties}</p>
-            <p className="stat-description">{stats.availableProperties} available</p>
+            <p className="stat-value">{stats.totalProperties || 0}</p>
+            <p className="stat-description">{stats.availableProperties || 0} available</p>
             <button onClick={() => onViewChange('list')}>Manage Properties</button>
           </div>
         </div>
@@ -96,9 +137,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           </div>
           <div className="stat-content">
             <h3>Total Bookings</h3>
-            <p className="stat-value">{stats.totalBookings}</p>
+            <p className="stat-value">{stats.totalBookings || 0}</p>
             <p className="stat-description">All time bookings</p>
-            <button onClick={() => onViewChange('list')}>View Details</button>
+            <button onClick={() => onViewChange('bookings', { type: 'all' })}>View Details</button>
           </div>
         </div>
 
@@ -108,9 +149,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           </div>
           <div className="stat-content">
             <h3>Current Bookings</h3>
-            <p className="stat-value">{stats.currentBookings}</p>
+            <p className="stat-value">{stats.currentBookings || 0}</p>
             <p className="stat-description">Active in last 30 days</p>
-            <button onClick={() => onViewChange('list')}>View Details</button>
+            <button onClick={() => onViewChange('bookings', { type: 'current' })}>View Details</button>
           </div>
         </div>
 
@@ -120,9 +161,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           </div>
           <div className="stat-content">
             <h3>Total Revenue</h3>
-            <p className="stat-value">AED {stats.totalRevenue.toLocaleString()}</p>
+            <p className="stat-value">AED {formatCurrency(stats.totalRevenue)}</p>
             <p className="stat-description">All time earnings</p>
-            <button onClick={() => onViewChange('list')}>View Details</button>
+            <button onClick={() => onViewChange('revenue', { type: 'all' })}>View Details</button>
           </div>
         </div>
 
@@ -132,9 +173,9 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           </div>
           <div className="stat-content">
             <h3>Monthly Revenue</h3>
-            <p className="stat-value">AED {stats.monthlyRevenue.toLocaleString()}</p>
+            <p className="stat-value">AED {formatCurrency(stats.monthlyRevenue)}</p>
             <p className="stat-description">This month's earnings</p>
-            <button onClick={() => onViewChange('list')}>View Details</button>
+            <button onClick={() => onViewChange('revenue', { type: 'monthly' })}>View Details</button>
           </div>
         </div>
 

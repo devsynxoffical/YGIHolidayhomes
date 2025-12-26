@@ -64,9 +64,98 @@ const getImageUrls = (imagePath, apiBaseUrl) => {
 };
 
 function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Dummy properties data for when backend is not connected
+  const DUMMY_PROPERTIES = [
+    {
+      id: '1',
+      title: 'Luxury Downtown Apartment',
+      location: 'Dubai Marina',
+      price: 450,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: 'Beautiful modern apartment with stunning city views. Fully furnished with premium amenities.',
+      available: true,
+      featured: true,
+      images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800']
+    },
+    {
+      id: '2',
+      title: 'Beachfront Villa',
+      location: 'Jumeirah Beach',
+      price: 1200,
+      bedrooms: 4,
+      bathrooms: 3,
+      description: 'Spacious villa with direct beach access. Perfect for families and large groups.',
+      available: true,
+      featured: true,
+      images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800']
+    },
+    {
+      id: '3',
+      title: 'Modern Studio Apartment',
+      location: 'Business Bay',
+      price: 280,
+      bedrooms: 1,
+      bathrooms: 1,
+      description: 'Cozy studio apartment in the heart of Business Bay. Ideal for business travelers.',
+      available: true,
+      featured: false,
+      images: ['https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800']
+    },
+    {
+      id: '4',
+      title: 'Penthouse with Panoramic Views',
+      location: 'Downtown Dubai',
+      price: 2000,
+      bedrooms: 3,
+      bathrooms: 3,
+      description: 'Luxurious penthouse with breathtaking views of Burj Khalifa and the city skyline.',
+      available: true,
+      featured: true,
+      images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800']
+    },
+    {
+      id: '5',
+      title: 'Family-Friendly Apartment',
+      location: 'Dubai Hills',
+      price: 550,
+      bedrooms: 3,
+      bathrooms: 2,
+      description: 'Comfortable family apartment in a quiet neighborhood with parks and amenities nearby.',
+      available: true,
+      featured: false,
+      images: ['https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800']
+    },
+    {
+      id: '6',
+      title: 'Cozy Garden Villa',
+      location: 'Arabian Ranches',
+      price: 800,
+      bedrooms: 3,
+      bathrooms: 2,
+      description: 'Charming villa with private garden. Perfect for a relaxing holiday getaway.',
+      available: true,
+      featured: false,
+      images: ['https://images.unsplash.com/photo-1600585152915-d208bec867a1?w=800']
+    },
+    {
+      id: '7',
+      title: 'Executive Suite',
+      location: 'DIFC',
+      price: 650,
+      bedrooms: 2,
+      bathrooms: 2,
+      description: 'Elegant executive suite in the financial district. Close to business centers and restaurants.',
+      available: true,
+      featured: false,
+      images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800']
+    }
+  ];
+
+  const [properties, setProperties] = useState(DUMMY_PROPERTIES);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [usingDummyData, setUsingDummyData] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
@@ -90,6 +179,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       const data = await response.json();
       console.log('Properties API response:', data);
       setProperties(data.properties || []);
+      setUsingDummyData(false);
       setError('');
       
       if (!data.properties || data.properties.length === 0) {
@@ -97,7 +187,10 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       }
     } catch (err) {
       const errorMsg = err.message || 'Failed to load properties';
-      setError(`Error: ${errorMsg}. Make sure the backend is running and accessible.`);
+      // Use dummy data when backend is not available
+      setProperties(DUMMY_PROPERTIES);
+      setUsingDummyData(true);
+      setError('Using demo data (backend not connected)');
       console.error('Error fetching properties:', err);
       console.error('API URL:', `${apiBaseUrl}/api/admin/properties`);
     } finally {
@@ -107,6 +200,13 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this property?')) {
+      return;
+    }
+
+    // If using dummy data, just remove from local state
+    if (usingDummyData) {
+      setProperties(properties.filter(p => p.id !== id));
+      alert('Property removed from demo data. Changes will be lost on refresh.');
       return;
     }
 
@@ -148,14 +248,34 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
         </div>
       </div>
 
-      {error && (
-        <div className="error-banner">
+      {error && !usingDummyData && (
+        <div className="error-banner" style={{ 
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          border: '1px solid #f5c6cb',
+          padding: '12px',
+          borderRadius: '4px',
+          marginBottom: '20px'
+        }}>
           {error}
           <br />
           <small style={{ marginTop: '10px', display: 'block' }}>
             💡 Tip: Check the browser console (F12) for more details. 
             If properties.json is empty, you can add properties manually using the "Add Property" button.
           </small>
+        </div>
+      )}
+      {usingDummyData && (
+        <div style={{ 
+          backgroundColor: '#d1ecf1',
+          color: '#0c5460',
+          border: '1px solid #bee5eb',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          marginBottom: '20px',
+          fontSize: '14px'
+        }}>
+          ℹ️ Using demo data (backend not connected)
         </div>
       )}
 

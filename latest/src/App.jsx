@@ -4,6 +4,8 @@ import Dashboard from './components/Dashboard';
 import DashboardView from './components/DashboardView';
 import PropertyList from './components/PropertyList';
 import PropertyForm from './components/PropertyForm';
+import BookingsView from './components/BookingsView';
+import RevenueView from './components/RevenueView';
 import './App.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
@@ -12,6 +14,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [viewParams, setViewParams] = useState({}); // For passing parameters to views
   const [editingProperty, setEditingProperty] = useState(null);
 
   useEffect(() => {
@@ -60,7 +63,10 @@ function App() {
     <div className="app">
       <Dashboard 
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={(view) => {
+          setCurrentView(view);
+          setViewParams({});
+        }}
         onLogout={handleLogout}
         onAddProperty={handleAddProperty}
       />
@@ -70,7 +76,10 @@ function App() {
           <DashboardView 
             apiBaseUrl={API_BASE_URL}
             token={token}
-            onViewChange={setCurrentView}
+            onViewChange={(view, params) => {
+              setCurrentView(view);
+              setViewParams(params || {});
+            }}
           />
         )}
         
@@ -90,6 +99,30 @@ function App() {
             property={editingProperty}
             onCancel={handleFormCancel}
             onSuccess={() => setCurrentView('list')}
+          />
+        )}
+
+        {currentView === 'bookings' && (
+          <BookingsView 
+            apiBaseUrl={API_BASE_URL}
+            token={token}
+            onViewChange={(view) => {
+              setCurrentView(view);
+              setViewParams({});
+            }}
+            viewType={viewParams.type || 'all'}
+          />
+        )}
+
+        {currentView === 'revenue' && (
+          <RevenueView 
+            apiBaseUrl={API_BASE_URL}
+            token={token}
+            onViewChange={(view) => {
+              setCurrentView(view);
+              setViewParams({});
+            }}
+            viewType={viewParams.type || 'all'}
           />
         )}
       </main>
