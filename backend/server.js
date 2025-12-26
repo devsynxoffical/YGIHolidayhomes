@@ -880,18 +880,33 @@ app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
           // Check if already in bookings
           const exists = bookings.some(b => b.paymentIntentId === pi.id);
           
-          if (!exists && pi.metadata) {
-            // Create booking from Stripe metadata if available
+          // Only create booking from Stripe if it has meaningful metadata
+          // Skip incomplete bookings (missing property name, guest name, or dates)
+          const hasPropertyName = pi.metadata?.propertyName && 
+                                  pi.metadata.propertyName.trim() !== '' && 
+                                  pi.metadata.propertyName !== 'Unknown Property';
+          const hasGuestName = pi.metadata?.guestName && 
+                               pi.metadata.guestName.trim() !== '' && 
+                               pi.metadata.guestName !== 'Unknown Guest';
+          const hasCheckIn = pi.metadata?.checkIn && 
+                             pi.metadata.checkIn.trim() !== '' && 
+                             pi.metadata.checkIn !== 'null';
+          const hasCheckOut = pi.metadata?.checkOut && 
+                              pi.metadata.checkOut.trim() !== '' && 
+                              pi.metadata.checkOut !== 'null';
+          
+          if (!exists && hasPropertyName && hasGuestName && hasCheckIn && hasCheckOut) {
+            // Create booking from Stripe metadata
             const booking = {
               id: `stripe_${pi.id}`,
               paymentIntentId: pi.id,
               propertyId: pi.metadata.propertyId || null,
-              propertyTitle: pi.metadata.propertyName || 'Unknown Property',
-              guestName: pi.metadata.guestName || 'Unknown Guest',
+              propertyTitle: pi.metadata.propertyName,
+              guestName: pi.metadata.guestName,
               guestEmail: pi.metadata.email || pi.receipt_email || 'unknown@email.com',
               phone: pi.metadata.phone || null,
-              checkIn: pi.metadata.checkIn || null,
-              checkOut: pi.metadata.checkOut || null,
+              checkIn: pi.metadata.checkIn,
+              checkOut: pi.metadata.checkOut,
               nights: pi.metadata.nights ? parseInt(pi.metadata.nights) : 1,
               guests: pi.metadata.guests ? parseInt(pi.metadata.guests) : 1,
               totalAmount: pi.amount / 100,
@@ -902,11 +917,29 @@ app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
             };
             bookings.push(booking);
           }
+          // Skip incomplete Stripe bookings - they're not useful without proper metadata
         }
       });
     } catch (stripeError) {
       console.warn('Could not fetch Stripe bookings:', stripeError.message);
     }
+
+    // Filter out bookings with invalid dates or missing critical info
+    bookings = bookings.filter(b => {
+      // Must have valid check-in and check-out dates
+      if (!b.checkIn || !b.checkOut) return false;
+      try {
+        const checkInDate = new Date(b.checkIn);
+        const checkOutDate = new Date(b.checkOut);
+        // Check if dates are valid (not epoch date or invalid)
+        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) return false;
+        // Check if dates are not epoch (Jan 1, 1970)
+        if (checkInDate.getFullYear() < 2000 || checkOutDate.getFullYear() < 2000) return false;
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
 
     // Sort by booking date (newest first)
     bookings.sort((a, b) => new Date(b.bookingDate) - new Date(a.bookingDate));

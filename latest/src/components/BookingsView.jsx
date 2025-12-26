@@ -189,12 +189,21 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid and not epoch date
+      if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+        return 'N/A';
+      }
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch (e) {
+      return 'N/A';
+    }
   };
 
   const formatCurrency = (value) => {
@@ -205,19 +214,41 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
   };
 
   const getFilteredBookings = () => {
+    // First, filter out incomplete bookings (missing critical info or invalid dates)
+    let validBookings = bookings.filter(b => {
+      // Must have property title and guest name
+      if (!b.propertyTitle || b.propertyTitle === 'Unknown Property' || 
+          !b.guestName || b.guestName === 'Unknown Guest') {
+        return false;
+      }
+      // Must have valid dates
+      if (!b.checkIn || !b.checkOut) return false;
+      try {
+        const checkInDate = new Date(b.checkIn);
+        const checkOutDate = new Date(b.checkOut);
+        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) return false;
+        // Check if dates are not epoch (Jan 1, 1970) or before 2000
+        if (checkInDate.getFullYear() < 2000 || checkOutDate.getFullYear() < 2000) return false;
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
+
+    // Apply additional filters
     if (filter === 'current') {
       // Show bookings from last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      return bookings.filter(b => new Date(b.bookingDate) >= thirtyDaysAgo);
+      return validBookings.filter(b => new Date(b.bookingDate) >= thirtyDaysAgo);
     }
     if (filter === 'confirmed') {
-      return bookings.filter(b => b.status === 'confirmed');
+      return validBookings.filter(b => b.status === 'confirmed');
     }
     if (filter === 'pending') {
-      return bookings.filter(b => b.status === 'pending');
+      return validBookings.filter(b => b.status === 'pending');
     }
-    return bookings;
+    return validBookings;
   };
 
   const filteredBookings = getFilteredBookings();
@@ -272,6 +303,19 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
           fontSize: '14px'
         }}>
           ℹ️ Using demo data (backend not connected)
+        </div>
+      )}
+      {!usingDummyData && bookings.length > 0 && (
+        <div style={{ 
+          backgroundColor: '#fff3cd',
+          color: '#856404',
+          border: '1px solid #ffc107',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          marginBottom: '20px',
+          fontSize: '13px'
+        }}>
+          ℹ️ Only bookings with complete information (property name, guest name, and valid dates) are displayed. Incomplete bookings are automatically filtered out.
         </div>
       )}
 
@@ -364,7 +408,12 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
           background: '#f8f9fa',
           borderRadius: '4px'
         }}>
-          <p>No bookings found for the selected filter.</p>
+          <p style={{ fontSize: '16px', marginBottom: '10px' }}>No bookings found for the selected filter.</p>
+          {usingDummyData && (
+            <p style={{ fontSize: '14px', color: '#666' }}>
+              Note: Only bookings with complete information are displayed. Incomplete bookings from Stripe (missing property name, guest name, or dates) are automatically filtered out.
+            </p>
+          )}
         </div>
       ) : (
         <div style={{ 
@@ -405,6 +454,11 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
                     <div>
                       <strong>Check-in:</strong> {formatDate(booking.checkIn)} → 
                       <strong> Check-out:</strong> {formatDate(booking.checkOut)}
+                      {(!booking.checkIn || !booking.checkOut || formatDate(booking.checkIn) === 'N/A' || formatDate(booking.checkOut) === 'N/A') && (
+                        <span style={{ color: '#dc3545', fontSize: '12px', marginLeft: '10px' }}>
+                          (Incomplete booking data)
+                        </span>
+                      )}
                     </div>
                     <div><strong>Nights:</strong> {booking.nights}</div>
                   </div>
