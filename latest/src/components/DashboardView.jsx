@@ -27,6 +27,7 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
   const [error, setError] = useState('');
   const [usingDummyData, setUsingDummyData] = useState(false);
   const [hasTriedFetch, setHasTriedFetch] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     fetchStatistics();
@@ -58,6 +59,7 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         setUsingDummyData(false);
         setError('');
         setHasTriedFetch(true);
+        setLastUpdated(new Date());
         
         // Log when live data is received
         if (data.statistics.dataSource === 'stripe') {
@@ -105,11 +107,58 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
     });
   };
 
+  const formatLastUpdated = (date) => {
+    if (!date) return '';
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} minute${Math.floor(diff / 60) > 1 ? 's' : ''} ago`;
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <div className="dashboard-welcome">
-      <div className="dashboard-header">
-        <h1>Dashboard Overview</h1>
-        <p>Welcome to YGI Holiday Homes Admin Panel</p>
+      <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div>
+          <h1>Dashboard Overview</h1>
+          <p>Welcome to YGI Holiday Homes Admin Panel</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+          {lastUpdated && !usingDummyData && (
+            <div style={{ fontSize: '12px', color: '#28a745', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span 
+                className="live-indicator"
+                style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#28a745',
+                  display: 'inline-block'
+                }}
+              ></span>
+              Live • Updated {formatLastUpdated(lastUpdated)}
+            </div>
+          )}
+          <button 
+            onClick={fetchStatistics}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              opacity: loading ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+          >
+            {loading ? '⏳ Refreshing...' : '🔄 Refresh'}
+          </button>
+        </div>
       </div>
 
       {error && !usingDummyData && (
