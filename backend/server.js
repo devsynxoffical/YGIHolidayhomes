@@ -784,31 +784,12 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Calculate statistics from bookings file
-    let totalBookingsFromFile = bookings.length;
-    let currentBookingsFromFile = bookings.filter(b => {
-      const bookingDate = new Date(b.bookingDate);
-      return bookingDate >= thirtyDaysAgo;
-    }).length;
-
-    // Calculate revenue from bookings file
+    // For live data, we'll use Stripe as the source of truth
+    // Bookings file is secondary (for additional metadata)
     let totalRevenue = 0;
     let monthlyRevenue = 0;
-
-    bookings.forEach(booking => {
-      if (booking.paymentStatus === 'paid' || booking.status === 'confirmed') {
-        totalRevenue += booking.totalAmount || 0;
-        
-        const bookingDate = new Date(booking.bookingDate);
-        if (bookingDate >= startOfMonth) {
-          monthlyRevenue += booking.totalAmount || 0;
-        }
-      }
-    });
-
-    // Also get data from Stripe to get complete picture
-    let stripeBookingsCount = 0;
-    let stripeCurrentBookingsCount = 0;
+    let totalBookings = 0;
+    let currentBookings = 0;
     const bookingsPaymentIntentIds = new Set(bookings.map(b => b.paymentIntentId).filter(id => id));
     
     try {
@@ -839,38 +820,44 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
         }
       }
 
-      // Count all successful Stripe payments as bookings (only if not already in bookings file)
+      // Count ALL successful Stripe payments as bookings (source of truth for live data)
       allPaymentIntents.forEach(pi => {
         if (pi.status === 'succeeded') {
           const amount = pi.amount / 100;
           const created = new Date(pi.created * 1000);
           
-          // Check if this payment intent is already in bookings file
-          const existsInBookings = bookingsPaymentIntentIds.has(pi.id);
+          // Count ALL successful payments as bookings
+          totalBookings++;
+          if (created >= thirtyDaysAgo) {
+            currentBookings++;
+          }
           
-          if (!existsInBookings) {
-            // Count as booking (not in bookings file)
-            stripeBookingsCount++;
-            if (created >= thirtyDaysAgo) {
-              stripeCurrentBookingsCount++;
-            }
-            
-            // Add revenue
-            totalRevenue += amount;
-            if (created >= startOfMonth) {
-              monthlyRevenue += amount;
-            }
+          // Add ALL revenue from Stripe (this is the live data)
+          totalRevenue += amount;
+          if (created >= startOfMonth) {
+            monthlyRevenue += amount;
           }
         }
       });
     } catch (stripeError) {
       console.warn('Could not fetch Stripe statistics:', stripeError.message);
-      // Continue with bookings file data only
+      // Fallback to bookings file if Stripe fails
+      totalBookings = bookings.length;
+      currentBookings = bookings.filter(b => {
+        const bookingDate = new Date(b.bookingDate);
+        return bookingDate >= thirtyDaysAgo;
+      }).length;
+      
+      bookings.forEach(booking => {
+        if (booking.paymentStatus === 'paid' || booking.status === 'confirmed') {
+          totalRevenue += booking.totalAmount || 0;
+          const bookingDate = new Date(booking.bookingDate);
+          if (bookingDate >= startOfMonth) {
+            monthlyRevenue += booking.totalAmount || 0;
+          }
+        }
+      });
     }
-
-    // Total bookings = bookings from file + Stripe payments not in file (no double counting)
-    const totalBookings = totalBookingsFromFile + stripeBookingsCount;
-    const currentBookings = currentBookingsFromFile + stripeCurrentBookingsCount;
 
     res.json({
       success: true,
