@@ -30,17 +30,21 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
 
   useEffect(() => {
     fetchStatistics();
-    // Refresh statistics every 30 seconds
-    const interval = setInterval(fetchStatistics, 30000);
+    // Refresh statistics every 15 seconds for more real-time updates
+    const interval = setInterval(fetchStatistics, 15000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${apiBaseUrl}/api/admin/statistics`, {
+      // Add cache-busting timestamp to ensure fresh data
+      const timestamp = new Date().getTime();
+      const response = await fetch(`${apiBaseUrl}/api/admin/statistics?t=${timestamp}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
       });
 
@@ -54,6 +58,15 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         setUsingDummyData(false);
         setError('');
         setHasTriedFetch(true);
+        
+        // Log when live data is received
+        if (data.statistics.dataSource === 'stripe') {
+          console.log('✅ Live data received from Stripe:', {
+            bookings: data.statistics.totalBookings,
+            revenue: data.statistics.totalRevenue,
+            lastUpdated: data.statistics.lastUpdated
+          });
+        }
       } else {
         throw new Error('Invalid response format');
       }

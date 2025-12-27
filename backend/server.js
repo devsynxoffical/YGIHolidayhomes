@@ -859,16 +859,36 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
       });
     }
 
+    // Add cache-control headers to ensure fresh data
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    const statistics = {
+      totalProperties,
+      availableProperties,
+      totalBookings,
+      currentBookings,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
+      lastUpdated: new Date().toISOString(), // Timestamp for when data was fetched
+      dataSource: 'stripe' // Indicate this is live data from Stripe
+    };
+
+    // Log statistics for debugging
+    console.log('📊 Live Statistics:', {
+      totalBookings,
+      currentBookings,
+      totalRevenue: statistics.totalRevenue,
+      monthlyRevenue: statistics.monthlyRevenue,
+      timestamp: statistics.lastUpdated
+    });
+
     res.json({
       success: true,
-      statistics: {
-        totalProperties,
-        availableProperties,
-        totalBookings,
-        currentBookings,
-        totalRevenue: Math.round(totalRevenue * 100) / 100,
-        monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
-      }
+      statistics
     });
   } catch (error) {
     console.error('Error fetching statistics:', error);
