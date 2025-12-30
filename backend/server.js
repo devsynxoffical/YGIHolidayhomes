@@ -820,66 +820,22 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
         }
       }
 
-      // Count only bookings with complete information (matching bookings view logic)
-      // This ensures statistics match what's actually displayed in the bookings page
+      // Count ALL successful Stripe payments as bookings (source of truth for live data)
       allPaymentIntents.forEach(pi => {
         if (pi.status === 'succeeded') {
           const amount = pi.amount / 100;
           const created = new Date(pi.created * 1000);
           
-          // Check if this payment intent is already in bookings file
-          const existsInBookings = bookingsPaymentIntentIds.has(pi.id);
-          
-          // Only count if it has complete metadata (same logic as bookings endpoint)
-          const hasPropertyName = pi.metadata?.propertyName && 
-                                  pi.metadata.propertyName.trim() !== '' && 
-                                  pi.metadata.propertyName !== 'Unknown Property';
-          const hasGuestName = pi.metadata?.guestName && 
-                               pi.metadata.guestName.trim() !== '' && 
-                               pi.metadata.guestName !== 'Unknown Guest';
-          const hasCheckIn = pi.metadata?.checkIn && 
-                             pi.metadata.checkIn.trim() !== '' && 
-                             pi.metadata.checkIn !== 'null';
-          const hasCheckOut = pi.metadata?.checkOut && 
-                              pi.metadata.checkOut.trim() !== '' && 
-                              pi.metadata.checkOut !== 'null';
-          
-          // Only count bookings with complete information
-          if (hasPropertyName && hasGuestName && hasCheckIn && hasCheckOut) {
-            // Count as booking
-            totalBookings++;
-            if (created >= thirtyDaysAgo) {
-              currentBookings++;
-            }
-            
-            // Add revenue
-            totalRevenue += amount;
-            if (created >= startOfMonth) {
-              monthlyRevenue += amount;
-            }
-          } else if (!existsInBookings) {
-            // If incomplete but not in bookings file, still count revenue but not as a booking
-            // This accounts for payments that don't have complete metadata
-            totalRevenue += amount;
-            if (created >= startOfMonth) {
-              monthlyRevenue += amount;
-            }
+          // Count ALL successful payments as bookings
+          totalBookings++;
+          if (created >= thirtyDaysAgo) {
+            currentBookings++;
           }
-        }
-      });
-      
-      // Also add revenue from bookings file (in case they have revenue not in Stripe)
-      bookings.forEach(booking => {
-        if (booking.paymentStatus === 'paid' || booking.status === 'confirmed') {
-          const bookingDate = new Date(booking.bookingDate);
-          const existsInStripe = allPaymentIntents.some(pi => pi.id === booking.paymentIntentId);
           
-          // Only add if not already counted from Stripe
-          if (!existsInStripe) {
-            totalRevenue += booking.totalAmount || 0;
-            if (bookingDate >= startOfMonth) {
-              monthlyRevenue += booking.totalAmount || 0;
-            }
+          // Add ALL revenue from Stripe (this is the live data)
+          totalRevenue += amount;
+          if (created >= startOfMonth) {
+            monthlyRevenue += amount;
           }
         }
       });
@@ -902,33 +858,6 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
         }
       });
     }
-    
-    // Add bookings from bookings file that aren't in Stripe
-    const bookingsFromFile = bookings.filter(b => {
-      // Only count if it has complete information
-      if (!b.propertyTitle || b.propertyTitle === 'Unknown Property') return false;
-      if (!b.guestName || b.guestName === 'Unknown Guest') return false;
-      if (!b.checkIn || !b.checkOut) return false;
-      
-      // Check if dates are valid
-      try {
-        const checkInDate = new Date(b.checkIn);
-        const checkOutDate = new Date(b.checkOut);
-        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) return false;
-        if (checkInDate.getFullYear() < 2000 || checkOutDate.getFullYear() < 2000) return false;
-      } catch (e) {
-        return false;
-      }
-      
-      // Check if not already counted from Stripe
-      return !bookingsPaymentIntentIds.has(b.paymentIntentId);
-    });
-    
-    totalBookings += bookingsFromFile.length;
-    currentBookings += bookingsFromFile.filter(b => {
-      const bookingDate = new Date(b.bookingDate);
-      return bookingDate >= thirtyDaysAgo;
-    }).length;
 
     // Add cache-control headers to ensure fresh data
     res.set({

@@ -165,10 +165,12 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${apiBaseUrl}/api/admin/properties`, {
+      // Fetch from the same endpoint the frontend uses (public endpoint)
+      // This ensures admin panel shows exactly what frontend shows
+      const response = await fetch(`${apiBaseUrl}/api/properties`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -178,17 +180,24 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
 
       const data = await response.json();
       console.log('Properties API response:', data);
-      setProperties(data.properties || []);
-      setUsingDummyData(false);
-      setError('');
       
-      if (!data.properties || data.properties.length === 0) {
+      // Ensure we're getting the same data structure as frontend
+      const fetchedProperties = data.properties || data || [];
+      
+      if (Array.isArray(fetchedProperties) && fetchedProperties.length > 0) {
+        setProperties(fetchedProperties);
+        setUsingDummyData(false);
+        setError('');
+        console.log(`✅ Loaded ${fetchedProperties.length} properties from API (synced with frontend)`);
+      } else {
+        setProperties([]);
+        setUsingDummyData(false);
         setError('No properties found. The properties.json file may be empty. You can add properties using the "Add Property" button.');
       }
     } catch (err) {
       const errorMsg = err.message || 'Failed to load properties';
       console.error('Error fetching properties:', err);
-      console.error('API URL:', `${apiBaseUrl}/api/admin/properties`);
+      console.error('API URL:', `${apiBaseUrl}/api/properties`);
       
       // Only use dummy data if we have no properties and backend failed
       if (properties.length === 0) {
@@ -282,6 +291,23 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
           fontSize: '14px'
         }}>
           ℹ️ Using demo data (backend not connected)
+        </div>
+      )}
+      {!usingDummyData && properties.length > 0 && (
+        <div style={{ 
+          backgroundColor: '#d4edda',
+          color: '#155724',
+          border: '1px solid #c3e6cb',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          marginBottom: '20px',
+          fontSize: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>✅</span>
+          <span>Showing {properties.length} properties synced with frontend (from backend API)</span>
         </div>
       )}
 
