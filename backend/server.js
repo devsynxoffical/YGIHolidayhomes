@@ -1064,19 +1064,77 @@ app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
       bookings = [];
     }
 
-    // Also get from Stripe
+    // Get all valid bookings from Stripe (with pagination)
     let stripeTransactions = [];
     try {
-      const paymentIntents = await stripe.paymentIntents.list({
-        limit: 100,
-      });
+      // Fetch all payment intents (paginate if needed for complete data)
+      let allPaymentIntents = [];
+      let hasMore = true;
+      let startingAfter = null;
       
-      stripeTransactions = paymentIntents.data
-        .filter(pi => pi.status === 'succeeded')
+      while (hasMore) {
+        const params = { limit: 100 };
+        if (startingAfter) {
+          params.starting_after = startingAfter;
+        }
+        
+        const paymentIntents = await stripe.paymentIntents.list(params);
+        allPaymentIntents = allPaymentIntents.concat(paymentIntents.data);
+        
+        hasMore = paymentIntents.has_more;
+        if (hasMore && paymentIntents.data.length > 0) {
+          startingAfter = paymentIntents.data[paymentIntents.data.length - 1].id;
+        } else {
+          hasMore = false;
+        }
+        
+        // Safety limit: don't fetch more than 1000 payment intents
+        if (allPaymentIntents.length >= 1000) {
+          hasMore = false;
+        }
+      }
+      
+      // Only include valid bookings (same validation as statistics endpoint)
+      stripeTransactions = allPaymentIntents
+        .filter(pi => {
+          if (pi.status !== 'succeeded') return false;
+          
+          // Check if this is a valid booking (has required metadata)
+          const hasPropertyName = pi.metadata?.propertyName && 
+                                  pi.metadata.propertyName !== 'null' && 
+                                  pi.metadata.propertyName !== 'Unknown Property';
+          const hasGuestName = pi.metadata?.guestName && 
+                               pi.metadata.guestName !== 'null' && 
+                               pi.metadata.guestName !== 'Unknown Guest';
+          const hasCheckIn = pi.metadata?.checkIn && 
+                             pi.metadata.checkIn !== 'null';
+          const hasCheckOut = pi.metadata?.checkOut && 
+                              pi.metadata.checkOut !== 'null';
+          
+          if (!hasPropertyName || !hasGuestName || !hasCheckIn || !hasCheckOut) {
+            return false;
+          }
+          
+          // Validate dates are not epoch or invalid
+          try {
+            const checkInDate = new Date(pi.metadata.checkIn);
+            const checkOutDate = new Date(pi.metadata.checkOut);
+            if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+              return false;
+            }
+            if (checkInDate.getFullYear() < 2000 || checkOutDate.getFullYear() < 2000) {
+              return false;
+            }
+          } catch (e) {
+            return false;
+          }
+          
+          return true;
+        })
         .map(pi => ({
           id: `stripe_${pi.id}`,
           date: new Date(pi.created * 1000).toISOString().split('T')[0],
-          property: pi.metadata?.propertyName || 'Unknown Property',
+          property: pi.metadata.propertyName,
           amount: pi.amount / 100,
           type: 'booking',
           paymentIntentId: pi.id
@@ -1085,20 +1143,21 @@ app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
       console.warn('Could not fetch Stripe revenue:', stripeError.message);
     }
 
-    // Combine bookings and Stripe transactions
+    // Combine bookings and Stripe transactions (avoid duplicates)
+    const bookingsPaymentIntentIds = new Set(bookings.map(b => b.paymentIntentId).filter(id => id));
     const allTransactions = [
       ...bookings
-        .filter(b => b.paymentStatus === 'paid' || b.status === 'confirmed')
+        .filter(b => (b.paymentStatus === 'paid' || b.status === 'confirmed') && b.totalAmount > 0)
         .map(b => ({
           id: b.id,
-          date: b.bookingDate.split('T')[0],
+          date: b.bookingDate ? b.bookingDate.split('T')[0] : new Date().toISOString().split('T')[0],
           property: b.propertyTitle || 'Unknown Property',
           amount: b.totalAmount || 0,
           type: 'booking',
           paymentIntentId: b.paymentIntentId
         })),
       ...stripeTransactions.filter(st => 
-        !bookings.some(b => b.paymentIntentId === st.paymentIntentId)
+        !bookingsPaymentIntentIds.has(st.paymentIntentId)
       )
     ];
 
