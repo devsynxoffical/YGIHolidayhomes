@@ -5,154 +5,9 @@ import './Dashboard.css';
 const { FaCalendarAlt, FaCheckCircle, FaTimesCircle, FaArrowLeft } = FaIcons;
 
 function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
-  // Dummy bookings data
-  const DUMMY_BOOKINGS = [
-    {
-      id: '1',
-      propertyId: '1',
-      propertyTitle: 'Luxury Downtown Apartment',
-      guestName: 'John Smith',
-      guestEmail: 'john.smith@email.com',
-      checkIn: '2025-01-15',
-      checkOut: '2025-01-20',
-      nights: 5,
-      totalAmount: 2250,
-      status: 'confirmed',
-      bookingDate: '2025-01-10',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '2',
-      propertyId: '2',
-      propertyTitle: 'Beachfront Villa',
-      guestName: 'Sarah Johnson',
-      guestEmail: 'sarah.j@email.com',
-      checkIn: '2025-01-18',
-      checkOut: '2025-01-25',
-      nights: 7,
-      totalAmount: 8400,
-      status: 'confirmed',
-      bookingDate: '2025-01-12',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '3',
-      propertyId: '4',
-      propertyTitle: 'Penthouse with Panoramic Views',
-      guestName: 'Michael Chen',
-      guestEmail: 'm.chen@email.com',
-      checkIn: '2025-01-20',
-      checkOut: '2025-01-27',
-      nights: 7,
-      totalAmount: 14000,
-      status: 'confirmed',
-      bookingDate: '2025-01-14',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '4',
-      propertyId: '3',
-      propertyTitle: 'Modern Studio Apartment',
-      guestName: 'Emma Wilson',
-      guestEmail: 'emma.w@email.com',
-      checkIn: '2025-01-22',
-      checkOut: '2025-01-25',
-      nights: 3,
-      totalAmount: 840,
-      status: 'pending',
-      bookingDate: '2025-01-16',
-      paymentStatus: 'pending'
-    },
-    {
-      id: '5',
-      propertyId: '5',
-      propertyTitle: 'Family-Friendly Apartment',
-      guestName: 'David Brown',
-      guestEmail: 'd.brown@email.com',
-      checkIn: '2025-01-25',
-      checkOut: '2025-01-30',
-      nights: 5,
-      totalAmount: 2750,
-      status: 'confirmed',
-      bookingDate: '2025-01-18',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '6',
-      propertyId: '1',
-      propertyTitle: 'Luxury Downtown Apartment',
-      guestName: 'Lisa Anderson',
-      guestEmail: 'lisa.a@email.com',
-      checkIn: '2025-01-28',
-      checkOut: '2025-02-02',
-      nights: 5,
-      totalAmount: 2250,
-      status: 'confirmed',
-      bookingDate: '2025-01-20',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '7',
-      propertyId: '6',
-      propertyTitle: 'Cozy Garden Villa',
-      guestName: 'Robert Taylor',
-      guestEmail: 'r.taylor@email.com',
-      checkIn: '2025-02-01',
-      checkOut: '2025-02-08',
-      nights: 7,
-      totalAmount: 5600,
-      status: 'confirmed',
-      bookingDate: '2025-01-22',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '8',
-      propertyId: '7',
-      propertyTitle: 'Executive Suite',
-      guestName: 'Jennifer Lee',
-      guestEmail: 'j.lee@email.com',
-      checkIn: '2025-02-05',
-      checkOut: '2025-02-10',
-      nights: 5,
-      totalAmount: 3250,
-      status: 'confirmed',
-      bookingDate: '2025-01-24',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '9',
-      propertyId: '2',
-      propertyTitle: 'Beachfront Villa',
-      guestName: 'Thomas White',
-      guestEmail: 't.white@email.com',
-      checkIn: '2025-02-10',
-      checkOut: '2025-02-15',
-      nights: 5,
-      totalAmount: 6000,
-      status: 'confirmed',
-      bookingDate: '2025-01-26',
-      paymentStatus: 'paid'
-    },
-    {
-      id: '10',
-      propertyId: '4',
-      propertyTitle: 'Penthouse with Panoramic Views',
-      guestName: 'Amanda Martinez',
-      guestEmail: 'a.martinez@email.com',
-      checkIn: '2025-02-12',
-      checkOut: '2025-02-19',
-      nights: 7,
-      totalAmount: 14000,
-      status: 'confirmed',
-      bookingDate: '2025-01-28',
-      paymentStatus: 'paid'
-    }
-  ];
-
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [usingDummyData, setUsingDummyData] = useState(true);
   const [filter, setFilter] = useState(viewType); // 'all', 'current', 'confirmed', 'pending'
 
   useEffect(() => {
@@ -188,14 +43,11 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
 
       const data = await response.json();
       setBookings(data.bookings || []);
-      setUsingDummyData(false);
       setError('');
     } catch (err) {
       console.error('Error fetching bookings:', err);
-      // Fallback to dummy data if backend fails
-      setBookings(DUMMY_BOOKINGS);
-      setUsingDummyData(true);
-      setError('Using demo data (backend not connected)');
+      setError(`Failed to load bookings: ${err.message}. Please check your connection and try again.`);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -305,20 +157,20 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
         </div>
       </div>
 
-      {usingDummyData && (
+      {error && (
         <div style={{ 
-          backgroundColor: '#d1ecf1',
-          color: '#0c5460',
-          border: '1px solid #bee5eb',
-          padding: '8px 12px',
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          border: '1px solid #f5c6cb',
+          padding: '12px',
           borderRadius: '4px',
           marginBottom: '20px',
           fontSize: '14px'
         }}>
-          ℹ️ Using demo data (backend not connected)
+          ⚠️ {error}
         </div>
       )}
-      {!usingDummyData && bookings.length > 0 && (
+      {!error && bookings.length > 0 && (
         <div style={{ 
           backgroundColor: '#fff3cd',
           color: '#856404',
@@ -422,11 +274,9 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
           borderRadius: '4px'
         }}>
           <p style={{ fontSize: '16px', marginBottom: '10px' }}>No bookings found for the selected filter.</p>
-          {usingDummyData && (
-            <p style={{ fontSize: '14px', color: '#666' }}>
-              Note: Only bookings with complete information are displayed. Incomplete bookings from Stripe (missing property name, guest name, or dates) are automatically filtered out.
-            </p>
-          )}
+          <p style={{ fontSize: '14px', color: '#666' }}>
+            Note: Only bookings with complete information are displayed. Incomplete bookings from Stripe (missing property name, guest name, or dates) are automatically filtered out.
+          </p>
         </div>
       ) : (
         <div style={{ 

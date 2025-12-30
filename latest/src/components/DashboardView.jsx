@@ -12,20 +12,9 @@ const {
 } = FaIcons;
 
 function DashboardView({ apiBaseUrl, token, onViewChange }) {
-  // Dummy data for when backend is not connected
-  const DUMMY_STATISTICS = {
-    totalProperties: 7,
-    availableProperties: 7,
-    totalBookings: 82,
-    currentBookings: 10,
-    totalRevenue: 99754.43,
-    monthlyRevenue: 8454.43,
-  };
-
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [usingDummyData, setUsingDummyData] = useState(false);
   const [hasTriedFetch, setHasTriedFetch] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -70,7 +59,6 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
       const data = await response.json();
       if (data.success && data.statistics) {
         setStatistics(data.statistics);
-        setUsingDummyData(false);
         setError('');
         setHasTriedFetch(true);
         setLastUpdated(new Date());
@@ -89,14 +77,8 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
     } catch (err) {
       console.error('Error fetching statistics:', err);
       setHasTriedFetch(true);
-      
-      // Only use dummy data if we've tried to fetch and failed
-      if (!statistics) {
-        setStatistics(DUMMY_STATISTICS);
-        setUsingDummyData(true);
-        setError('Backend connection failed - using demo data');
-      }
-      // If we already have real data, keep it and just log the error
+      setError(`Failed to load dashboard data: ${err.message}. Please check your connection and try again.`);
+      // Don't set statistics to null - keep last known data if available
     } finally {
       setLoading(false);
     }
@@ -110,7 +92,52 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
     );
   }
 
-  const stats = statistics || DUMMY_STATISTICS;
+  // If no statistics available and we've tried to fetch, show error
+  if (!statistics && hasTriedFetch) {
+    return (
+      <div className="dashboard-welcome">
+        <div className="dashboard-header">
+          <h1>Dashboard Overview</h1>
+          <p>Welcome to YGI Holiday Homes Admin Panel</p>
+        </div>
+        <div className="error-banner" style={{ 
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          border: '1px solid #f5c6cb',
+          padding: '20px',
+          borderRadius: '8px',
+          marginTop: '20px'
+        }}>
+          <h3 style={{ marginTop: 0 }}>Unable to Load Dashboard</h3>
+          <p>{error || 'Failed to connect to the backend. Please check your connection and try again.'}</p>
+          <button 
+            onClick={fetchStatistics}
+            style={{
+              marginTop: '15px',
+              padding: '10px 20px',
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = statistics || {
+    totalProperties: 0,
+    availableProperties: 0,
+    totalBookings: 0,
+    currentBookings: 0,
+    totalRevenue: 0,
+    monthlyRevenue: 0,
+  };
 
   // Helper function to format currency safely
   const formatCurrency = (value) => {
@@ -138,7 +165,7 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
           <p>Welcome to YGI Holiday Homes Admin Panel</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          {lastUpdated && !usingDummyData && (
+          {lastUpdated && statistics && (
             <div style={{ fontSize: '12px', color: '#28a745', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <span 
                 className="live-indicator"
@@ -175,31 +202,6 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
         </div>
       </div>
 
-      {error && !usingDummyData && (
-        <div className="error-banner" style={{ 
-          backgroundColor: '#f8d7da',
-          color: '#721c24',
-          border: '1px solid #f5c6cb',
-          padding: '12px',
-          borderRadius: '4px',
-          marginBottom: '20px'
-        }}>
-          {error}
-        </div>
-      )}
-      {usingDummyData && hasTriedFetch && (
-        <div style={{ 
-          backgroundColor: '#fff3cd',
-          color: '#856404',
-          border: '1px solid #ffc107',
-          padding: '8px 12px',
-          borderRadius: '4px',
-          marginBottom: '20px',
-          fontSize: '14px'
-        }}>
-          ⚠️ {error || 'Backend not connected - showing demo data'}
-        </div>
-      )}
 
       <div className="dashboard-stats">
         <div className="stat-card">
