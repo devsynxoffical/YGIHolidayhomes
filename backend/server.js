@@ -827,22 +827,51 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
         }
       }
 
-      // Count ALL successful Stripe payments as bookings (source of truth for live data)
+      // Only count valid bookings (payments with proper booking metadata)
       allPaymentIntents.forEach(pi => {
         if (pi.status === 'succeeded') {
-          const amount = pi.amount / 100;
-          const created = new Date(pi.created * 1000);
+          // Check if this is a valid booking (has required metadata)
+          const hasPropertyName = pi.metadata?.propertyName && 
+                                  pi.metadata.propertyName !== 'null' && 
+                                  pi.metadata.propertyName !== 'Unknown Property';
+          const hasGuestName = pi.metadata?.guestName && 
+                               pi.metadata.guestName !== 'null' && 
+                               pi.metadata.guestName !== 'Unknown Guest';
+          const hasCheckIn = pi.metadata?.checkIn && 
+                             pi.metadata.checkIn !== 'null';
+          const hasCheckOut = pi.metadata?.checkOut && 
+                              pi.metadata.checkOut !== 'null';
           
-          // Count ALL successful payments as bookings
-          totalBookings++;
-          if (created >= thirtyDaysAgo) {
-            currentBookings++;
-          }
-          
-          // Add ALL revenue from Stripe (this is the live data)
-          totalRevenue += amount;
-          if (created >= startOfMonth) {
-            monthlyRevenue += amount;
+          // Only count if it has all required booking information
+          if (hasPropertyName && hasGuestName && hasCheckIn && hasCheckOut) {
+            const amount = pi.amount / 100;
+            const created = new Date(pi.created * 1000);
+            
+            // Validate dates are not epoch or invalid
+            try {
+              const checkInDate = new Date(pi.metadata.checkIn);
+              const checkOutDate = new Date(pi.metadata.checkOut);
+              if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+                return; // Skip invalid dates
+              }
+              if (checkInDate.getFullYear() < 2000 || checkOutDate.getFullYear() < 2000) {
+                return; // Skip epoch dates
+              }
+            } catch (e) {
+              return; // Skip if date parsing fails
+            }
+            
+            // Count as valid booking
+            totalBookings++;
+            if (created >= thirtyDaysAgo) {
+              currentBookings++;
+            }
+            
+            // Add revenue from valid bookings only
+            totalRevenue += amount;
+            if (created >= startOfMonth) {
+              monthlyRevenue += amount;
+            }
           }
         }
       });
