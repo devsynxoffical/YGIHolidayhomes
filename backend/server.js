@@ -914,12 +914,13 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
     };
 
     // Log statistics for debugging
-    console.log('📊 Live Statistics:', {
+    console.log('📊 Live Statistics (Valid Bookings Only):', {
       totalBookings,
       currentBookings,
       totalRevenue: statistics.totalRevenue,
       monthlyRevenue: statistics.monthlyRevenue,
-      timestamp: statistics.lastUpdated
+      timestamp: statistics.lastUpdated,
+      note: 'Only counting payments with valid booking metadata (propertyName, guestName, checkIn, checkOut)'
     });
 
     res.json({
