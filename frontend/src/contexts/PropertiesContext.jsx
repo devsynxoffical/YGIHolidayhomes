@@ -7,7 +7,7 @@ const PropertiesContext = createContext();
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
 
 export const PropertiesProvider = ({ children }) => {
-  const [properties, setProperties] = useState(fallbackProperties);
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -15,12 +15,17 @@ export const PropertiesProvider = ({ children }) => {
     const fetchProperties = async () => {
       try {
         setLoading(true);
-        console.log(`🔄 Fetching properties from: ${API_BASE_URL}/api/properties`);
+        // Add cache-busting timestamp to ensure fresh data
+        const timestamp = new Date().getTime();
+        const url = `${API_BASE_URL}/api/properties?_t=${timestamp}`;
+        console.log(`🔄 Fetching properties from: ${url}`);
         
-        const response = await fetch(`${API_BASE_URL}/api/properties`, {
+        const response = await fetch(url, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           },
         });
         
@@ -38,11 +43,15 @@ export const PropertiesProvider = ({ children }) => {
         if (data.success && data.properties && data.properties.length > 0) {
           setProperties(data.properties);
           setError(null);
-          console.log(`✅ Loaded ${data.properties.length} properties from API`);
+          console.log(`✅ Loaded ${data.properties.length} properties from API (live data)`);
+        } else if (data.properties && Array.isArray(data.properties)) {
+          // Even if empty, use the API response (empty array)
+          setProperties(data.properties);
+          setError(null);
+          console.log(`✅ Loaded ${data.properties.length} properties from API (empty but live)`);
         } else {
-          // If API returns empty, use fallback
-          console.warn('⚠️ API returned empty properties, using fallback');
-          setProperties(fallbackProperties);
+          // Invalid response format
+          throw new Error('Invalid response format from API');
         }
       } catch (err) {
         console.error('❌ Failed to fetch properties from API:', err);
@@ -51,15 +60,19 @@ export const PropertiesProvider = ({ children }) => {
           stack: err.stack,
           apiUrl: `${API_BASE_URL}/api/properties`
         });
-        // Use fallback properties if API fails
-        setProperties(fallbackProperties);
-        setError(err.message);
+        // Don't use fallback - show error instead
+        setProperties([]);
+        setError(`Failed to load properties: ${err.message}. Please refresh the page.`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProperties();
+    
+    // Refresh properties every 5 minutes to ensure fresh data
+    const refreshInterval = setInterval(fetchProperties, 5 * 60 * 1000);
+    return () => clearInterval(refreshInterval);
   }, []);
 
   return (

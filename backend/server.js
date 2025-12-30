@@ -750,6 +750,13 @@ app.delete('/api/admin/images/:imageId', authenticateAdmin, async (req, res) => 
 // Public API endpoint for frontend (no authentication required)
 app.get('/api/properties', async (req, res) => {
   try {
+    // Add cache-control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
     const properties = JSON.parse(data);
     res.json({ success: true, properties });
