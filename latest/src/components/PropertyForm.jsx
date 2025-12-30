@@ -47,7 +47,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
   const [uploadProgress, setUploadProgress] = useState({});
   const [selectedImageCategory, setSelectedImageCategory] = useState('Living Room');
   const [imageFallbacks, setImageFallbacks] = useState({}); // Store fallback URLs for each image
-  
+
   // Image categories matching the frontend PropertyPhotos component
   const imageCategories = [
     'Living Room',
@@ -62,7 +62,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     'Exterior',
     'Other'
   ];
-  
+
   // Ensure inputs always have string values (not undefined)
   useEffect(() => {
     if (highlightInput === undefined) setHighlightInput('');
@@ -75,40 +75,40 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     if (property) {
       console.log('Loading property for editing:', property);
       console.log('Property images:', property.images);
-      
+
       // Process images: Use stored URLs directly (they should be full URLs from MongoDB)
       // For old relative paths, we'll try to convert them, but prefer stored full URLs
       const websiteUrl = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
-      
+
       const processedImages = (property.images || []).map((img, idx) => {
         const imageUrl = typeof img === 'string' ? img : (img?.url || img);
-        
+
         if (!imageUrl || !imageUrl.trim()) return null;
-        
+
         const trimmedUrl = imageUrl.trim();
-        
+
         // If it's already a full URL (http/https), use it directly
         if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
           return { original: trimmedUrl, urls: [trimmedUrl] };
         }
-        
+
         // If it's a MongoDB API path (/api/images/...), make it full URL
         if (trimmedUrl.includes('/api/images/')) {
-          const fullUrl = trimmedUrl.startsWith('/api/images/') 
+          const fullUrl = trimmedUrl.startsWith('/api/images/')
             ? `${apiBaseUrl}${trimmedUrl}`
             : trimmedUrl.startsWith('api/images/')
-            ? `${apiBaseUrl}/${trimmedUrl}`
-            : trimmedUrl;
+              ? `${apiBaseUrl}/${trimmedUrl}`
+              : trimmedUrl;
           return { original: trimmedUrl, urls: [fullUrl] };
         }
-        
+
         // For old relative paths (starting with ./), try MongoDB first
         // Only add website URL fallback if not on localhost (to avoid CORS issues)
         if (trimmedUrl.startsWith('./')) {
           const cleanPath = trimmedUrl.replace(/^\.\//, '').replace(/\\/g, '/');
           const encodedFilename = encodeURIComponent(cleanPath);
           const mongoUrl = `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
-          
+
           // Only add website URL fallback if not on localhost
           const urls = [mongoUrl];
           if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
@@ -116,45 +116,35 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
             const websiteFullUrl = `${websiteUrl}${websitePath}`;
             urls.push(websiteFullUrl);
           }
-          
+
           return { original: trimmedUrl, urls };
         }
-        
+
         // If it's a relative path without ./, try MongoDB
         // Only add website URL fallback if not on localhost
         if (!trimmedUrl.startsWith('http') && !trimmedUrl.startsWith('/api')) {
           const encodedFilename = encodeURIComponent(trimmedUrl);
           const mongoUrl = `${apiBaseUrl}/api/images/filename/${encodedFilename}`;
-          
+
           const urls = [mongoUrl];
           if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
             const cleanPath = trimmedUrl.startsWith('/') ? trimmedUrl : '/' + trimmedUrl;
             const websiteFullUrl = `${websiteUrl}${cleanPath}`;
             urls.push(websiteFullUrl);
           }
-          
+
           return { original: trimmedUrl, urls };
         }
-        
+
         return { original: trimmedUrl, urls: [trimmedUrl] };
       }).filter(img => img !== null); // Remove any null/undefined
-      
-      // Extract just the URLs for formData (use the first URL of each, which is the preferred one)
-      const imageUrls = processedImages.map(img => img.urls[0]);
-      
-      // Store fallback URLs for error handling
-      const fallbacks = {};
-      processedImages.forEach((img, idx) => {
-        if (img.urls.length > 1) {
-          fallbacks[idx] = img.urls.slice(1); // All URLs except the first
-        }
-      });
-      setImageFallbacks(fallbacks);
-      
+
       console.log('Processed images for preview:', processedImages);
-      console.log('Image URLs for formData:', imageUrls);
-      console.log('Image fallbacks:', fallbacks);
-      
+      // Images not handled here anymore, passed through but not edited
+      const imageUrls = (property.images || []);
+
+      console.log('Images preserved for submission:', imageUrls);
+
       setFormData({
         title: property.title || '',
         metaTitle: property.metaTitle || '',
@@ -217,7 +207,6 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         excludeDiscount: false,
         excludeCleaningFee: false
       });
-      setImageFallbacks({});
     }
   }, [property, apiBaseUrl]);
 
@@ -271,7 +260,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 'Authorization': `Bearer ${token}`
               }
             });
-            
+
             if (response.ok) {
               console.log('✅ Image deleted from MongoDB:', imageId);
             } else {
@@ -283,7 +272,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
           }
         }
       }
-      
+
       // Update fallbacks when removing images
       setImageFallbacks(prev => {
         const newFallbacks = {};
@@ -300,7 +289,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         return newFallbacks;
       });
     }
-    
+
     // Remove from form data
     setFormData(prev => ({
       ...prev,
@@ -338,100 +327,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     }));
   };
 
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
 
-    setUploadingImages(true);
-    setError('');
-
-    try {
-      const uploadPromises = files.map(async (file, index) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        // Create filename with category prefix for better organization
-        const categoryPrefix = selectedImageCategory.replace(/\s+/g, '-').toLowerCase();
-        const timestamp = Date.now();
-        const fileExtension = file.name.split('.').pop();
-        const filename = `${categoryPrefix}_${timestamp}_${index}.${fileExtension}`;
-        
-        formData.append('filename', filename);
-        formData.append('propertyId', property?.id || '');
-        formData.append('category', selectedImageCategory); // Use selected category
-
-        setUploadProgress(prev => ({ ...prev, [index]: 0 }));
-
-        const response = await fetch(`${apiBaseUrl}/api/images/upload`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed to upload ${file.name}`);
-        }
-
-        const data = await response.json();
-        setUploadProgress(prev => ({ ...prev, [index]: 100 }));
-        
-        // Backend should return a full URL, use it directly
-        // Only construct URL if backend returns a relative path (shouldn't happen)
-        let imageUrl = data.url;
-        if (!imageUrl || (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://'))) {
-          // Fallback: construct full URL if backend didn't return one
-          if (imageUrl && imageUrl.startsWith('/api/images/')) {
-            imageUrl = `${apiBaseUrl}${imageUrl}`;
-          } else if (data.imageId) {
-            // Use imageId to construct URL
-            imageUrl = `${apiBaseUrl}/api/images/${data.imageId}`;
-          } else {
-            console.error('Invalid image URL from backend:', data);
-            throw new Error('Invalid image URL received from server');
-          }
-        }
-        
-        console.log('Uploaded image URL:', imageUrl); // Debug log
-        
-        return {
-          url: imageUrl,
-          category: data.category || selectedImageCategory,
-          imageId: data.imageId
-        };
-      });
-
-      const uploadedImages = await Promise.all(uploadPromises);
-      
-      // Add uploaded images to form data
-      // Store as array of URLs (strings) for compatibility
-      const newImageUrls = uploadedImages.map(img => img.url);
-      console.log('Uploaded image URLs:', newImageUrls);
-      
-      setFormData(prev => {
-        const updatedImages = [...(prev.images || []), ...newImageUrls];
-        console.log('Updated formData.images:', updatedImages);
-        return {
-          ...prev,
-          images: updatedImages
-        };
-      });
-      
-      // Clear fallbacks for newly uploaded images (they're MongoDB URLs, no fallback needed)
-      // Keep existing fallbacks for old images
-
-      alert(`✅ Successfully uploaded ${uploadedImages.length} image(s) to MongoDB in "${selectedImageCategory}" category!`);
-    } catch (err) {
-      setError(err.message || 'Failed to upload images');
-      console.error('Error uploading images:', err);
-    } finally {
-      setUploadingImages(false);
-      setUploadProgress({});
-      // Reset file input
-      e.target.value = '';
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -441,36 +337,36 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     try {
       // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
       // Remove relative paths (old local paths) as they won't work with MongoDB
-      const validImages = Array.isArray(formData.images) 
+      const validImages = Array.isArray(formData.images)
         ? formData.images
-            .map(img => {
-              // Handle both string URLs and object format
-              const imageUrl = typeof img === 'string' ? img : (img?.url || img);
-              return imageUrl;
-            })
-            .filter(img => {
-              if (!img || !img.trim()) return false;
-              const trimmed = img.trim();
-              // Only keep full URLs (http/https) or MongoDB API paths
-              return trimmed.startsWith('http://') || 
-                     trimmed.startsWith('https://') || 
-                     trimmed.startsWith('/api/images/');
-            })
+          .map(img => {
+            // Handle both string URLs and object format
+            const imageUrl = typeof img === 'string' ? img : (img?.url || img);
+            return imageUrl;
+          })
+          .filter(img => {
+            if (!img || !img.trim()) return false;
+            const trimmed = img.trim();
+            // Only keep full URLs (http/https) or MongoDB API paths
+            return trimmed.startsWith('http://') ||
+              trimmed.startsWith('https://') ||
+              trimmed.startsWith('/api/images/');
+          })
         : [];
-      
+
       // Ensure images array is properly formatted
       const submitData = {
         ...formData,
         images: validImages
       };
-      
+
       console.log('Submitting property with images:', submitData.images);
       console.log('Filtered out relative paths, kept only full URLs');
-      
-      const url = property 
+
+      const url = property
         ? `${apiBaseUrl}/api/admin/properties/${property.id}`
         : `${apiBaseUrl}/api/admin/properties`;
-      
+
       const method = property ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -491,7 +387,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
       // Show success message
       alert(`✅ Property ${property ? 'updated' : 'created'} successfully!\n\n` +
         `✅ Changes are now live! The frontend automatically fetches from the API, so your changes will appear on the website immediately after refresh.`);
-      
+
       onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to save property');
@@ -514,7 +410,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         {/* Basic Information */}
         <section className="form-section">
           <h2>Basic Information</h2>
-          
+
           <div className="form-row">
             <div className="form-group">
               <label>Title *</label>
@@ -526,7 +422,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label>Slug *</label>
               <input
@@ -549,7 +445,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 onChange={handleChange}
               />
             </div>
-            
+
             <div className="form-group">
               <label>Area</label>
               <input
@@ -591,7 +487,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 onChange={handleChange}
               />
             </div>
-            
+
             <div className="form-group">
               <label>DTCM Code</label>
               <input
@@ -607,7 +503,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         {/* Property Details */}
         <section className="form-section">
           <h2>Property Details</h2>
-          
+
           <div className="form-row">
             <div className="form-group">
               <label>Bedrooms</label>
@@ -619,7 +515,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 min="0"
               />
             </div>
-            
+
             <div className="form-group">
               <label>Bathrooms</label>
               <input
@@ -630,7 +526,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 min="0"
               />
             </div>
-            
+
             <div className="form-group">
               <label>Guests</label>
               <input
@@ -641,7 +537,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 min="1"
               />
             </div>
-            
+
             <div className="form-group">
               <label>Beds</label>
               <input
@@ -666,7 +562,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 min="0"
               />
             </div>
-            
+
             <div className="form-group">
               <label>Rating</label>
               <input
@@ -679,7 +575,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 step="0.1"
               />
             </div>
-            
+
             <div className="form-group">
               <label>Sleeps</label>
               <input
@@ -704,7 +600,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 Featured
               </label>
             </div>
-            
+
             <div className="form-group checkbox-group">
               <label>
                 <input
@@ -716,7 +612,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 Available
               </label>
             </div>
-            
+
             <div className="form-group checkbox-group">
               <label>
                 <input
@@ -728,7 +624,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 Exclude Discount
               </label>
             </div>
-            
+
             <div className="form-group checkbox-group">
               <label>
                 <input
@@ -787,244 +683,15 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         </section>
 
         {/* Images */}
-        <section className="form-section">
-          <h2>Images</h2>
-          
-          {/* Image Category Selection */}
-          <div className="form-group" style={{ marginBottom: '15px' }}>
-            <label>Select Image Category/Section *</label>
-            <select
-              value={selectedImageCategory}
-              onChange={(e) => setSelectedImageCategory(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                fontSize: '16px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                backgroundColor: '#fff'
-              }}
-            >
-              {imageCategories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-            <p style={{ marginTop: '5px', fontSize: '14px', color: '#666' }}>
-              Select the section where these images belong (e.g., Living Room, Bedroom 1, Kitchen, etc.)
-            </p>
-          </div>
-          
-          {/* Image Upload */}
-          <div className="image-upload-section">
-            <label className="upload-label">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                disabled={uploadingImages}
-                style={{ display: 'none' }}
-                id="image-upload"
-              />
-              <span className="upload-button">
-                {uploadingImages ? 'Uploading...' : '📤 Upload Images to ' + selectedImageCategory}
-              </span>
-            </label>
-            <p className="upload-hint">
-              Select multiple images to upload to MongoDB. Images will be categorized as "{selectedImageCategory}".
-            </p>
-            
-            {/* Upload Progress */}
-            {Object.keys(uploadProgress).length > 0 && (
-              <div style={{ marginTop: '10px' }}>
-                {Object.entries(uploadProgress).map(([index, progress]) => (
-                  <div key={index} style={{ marginBottom: '5px' }}>
-                    <div style={{ 
-                      width: '100%', 
-                      backgroundColor: '#f0f0f0', 
-                      borderRadius: '4px',
-                      overflow: 'hidden'
-                    }}>
-                      <div style={{
-                        width: `${progress}%`,
-                        height: '20px',
-                        backgroundColor: '#4CAF50',
-                        transition: 'width 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        fontSize: '12px'
-                      }}>
-                        {progress < 100 ? `${progress}%` : 'Complete'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Manual Image URL Input */}
-          <div className="array-input-group" style={{ marginTop: '15px' }}>
-            <input
-              type="text"
-              value={imageInput}
-              onChange={(e) => setImageInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleArrayAdd('images', imageInput);
-                  setImageInput('');
-                }
-              }}
-              placeholder="Or enter image URL/path manually (press Enter)"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                handleArrayAdd('images', imageInput);
-                setImageInput('');
-              }}
-            >
-              Add URL
-            </button>
-          </div>
-
-          {/* Image Preview Grid */}
-          {formData.images && formData.images.length > 0 ? (
-            <div className="image-preview-grid">
-              {formData.images.map((image, index) => {
-                // Handle both string URLs and object format
-                const imageUrl = typeof image === 'string' ? image : (image?.url || image);
-                
-                if (!imageUrl || !imageUrl.trim()) {
-                  return null; // Skip empty images
-                }
-                
-                // Get fallback URLs for this image index
-                const fallbackUrls = imageFallbacks[index] || [];
-                
-                // Use the current URL (which is the first in our list)
-                let fullImageUrl = imageUrl.trim();
-                if (!fullImageUrl.startsWith('http://') && !fullImageUrl.startsWith('https://')) {
-                  if (fullImageUrl.startsWith('/api/images/')) {
-                    fullImageUrl = `${apiBaseUrl}${fullImageUrl}`;
-                  } else if (fullImageUrl.startsWith('api/images/')) {
-                    fullImageUrl = `${apiBaseUrl}/${fullImageUrl}`;
-                  } else {
-                    fullImageUrl = `${apiBaseUrl}/${fullImageUrl}`;
-                  }
-                }
-                
-                // Create a unique key for this image
-                const imageKey = `img-${index}-${fullImageUrl.substring(0, 30).replace(/[^a-zA-Z0-9]/g, '-')}`;
-                
-                // Track tried URLs using a closure
-                const triedUrls = new Set([fullImageUrl]);
-                
-                console.log(`Preview image ${index}:`, { 
-                  original: imageUrl, 
-                  full: fullImageUrl,
-                  fallbacks: fallbackUrls 
-                }); // Debug log
-                
-                return (
-                  <div key={imageKey} className="image-preview-item">
-                    <img 
-                      src={fullImageUrl}
-                      alt={`Preview ${index + 1}`}
-                      crossOrigin="anonymous"
-                      style={{
-                        width: '100%',
-                        height: '200px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        backgroundColor: '#f0f0f0',
-                        display: 'block'
-                      }}
-                      onError={(e) => {
-                        const img = e.target;
-                        const currentSrc = img.src;
-                        triedUrls.add(currentSrc);
-                        
-                        // Try fallback URLs if available
-                        if (fallbackUrls.length > 0) {
-                          // Find next URL that we haven't tried yet
-                          const nextUrl = fallbackUrls.find(url => {
-                            try {
-                              const urlObj = new URL(url);
-                              const currentObj = new URL(currentSrc);
-                              return urlObj.href !== currentObj.href && !triedUrls.has(url);
-                            } catch {
-                              return url !== currentSrc && !triedUrls.has(url);
-                            }
-                          });
-                          
-                          if (nextUrl) {
-                            console.log(`Trying fallback URL for image ${index}:`, nextUrl);
-                            triedUrls.add(nextUrl);
-                            img.src = nextUrl;
-                            return; // Try next URL
-                          }
-                        }
-                        
-                        // All URLs failed - show placeholder and prevent further errors
-                        img.onerror = null;
-                        console.error(`Failed to load image ${index} after trying all URLs:`, {
-                          original: imageUrl,
-                          full: fullImageUrl,
-                          fallbacks: fallbackUrls,
-                          triedSrc: currentSrc
-                        });
-                        // Use a data URL for placeholder to avoid network requests
-                        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
-                        img.style.objectFit = 'contain';
-                        img.style.backgroundColor = '#f0f0f0';
-                      }}
-                      onLoad={() => {
-                        console.log(`✅ Successfully loaded image ${index}:`, fullImageUrl);
-                      }}
-                    />
-                    <div className="image-preview-overlay">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          console.log('Removing image at index:', index);
-                          handleArrayRemove('images', index);
-                        }}
-                        className="image-remove-btn"
-                        title="Remove image (will also delete from MongoDB)"
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="image-url-preview" style={{ 
-                      fontSize: '11px', 
-                      color: '#666', 
-                      padding: '5px',
-                      wordBreak: 'break-all',
-                      maxHeight: '40px',
-                      overflow: 'hidden'
-                    }}>
-                      {typeof image === 'object' && image.category ? `${image.category}: ` : ''}
-                      {fullImageUrl.length > 60 ? `${fullImageUrl.substring(0, 60)}...` : fullImageUrl}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p style={{ color: '#666', fontStyle: 'italic', marginTop: '10px' }}>
-              No images uploaded yet. Upload images above to see previews.
-            </p>
-          )}
-        </section>
+        {/* Images section removed - managed in separate view */}
+        <div className="form-section" style={{ background: '#f9f9f9', border: '1px dashed #ccc', textAlign: 'center', padding: '20px' }}>
+          <p>Images are now managed in the "Property Images" section.</p>
+        </div>
 
         {/* Space Information */}
         <section className="form-section">
           <h2>Space Information</h2>
-          
+
           <div className="form-group">
             <label>Kitchen</label>
             <textarea
@@ -1033,7 +700,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
               rows="3"
             />
           </div>
-          
+
           <div className="form-group">
             <label>Living</label>
             <textarea
@@ -1042,7 +709,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
               rows="3"
             />
           </div>
-          
+
           <div className="form-group">
             <label>Facilities</label>
             <textarea
@@ -1056,7 +723,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         {/* Guest Access & Notes */}
         <section className="form-section">
           <h2>Guest Access & Notes</h2>
-          
+
           <div className="form-group">
             <label>Guest Access</label>
             <textarea
@@ -1066,7 +733,7 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
               rows="4"
             />
           </div>
-          
+
           <div className="form-group">
             <label>Other Notes</label>
             <textarea

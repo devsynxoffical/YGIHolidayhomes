@@ -5,9 +5,9 @@ function Dashboard({ currentView, onViewChange, onLogout, onAddProperty }) {
     <nav className="dashboard-nav">
       <div className="nav-header">
         <div className="nav-logo-container">
-          <img 
-            src="https://www.ygiholidayhomes.com/Images/logoFinal.png" 
-            alt="YGI Holiday Homes" 
+          <img
+            src="https://www.ygiholidayhomes.com/Images/logoFinal.png"
+            alt="YGI Holiday Homes"
             className="nav-logo"
             onError={(e) => {
               // Fallback if image fails to load
@@ -21,7 +21,7 @@ function Dashboard({ currentView, onViewChange, onLogout, onAddProperty }) {
       </div>
       <ul className="nav-menu">
         <li>
-          <button 
+          <button
             className={currentView === 'dashboard' ? 'active' : ''}
             onClick={() => onViewChange('dashboard')}
           >
@@ -29,7 +29,7 @@ function Dashboard({ currentView, onViewChange, onLogout, onAddProperty }) {
           </button>
         </li>
         <li>
-          <button 
+          <button
             className={currentView === 'list' ? 'active' : ''}
             onClick={() => onViewChange('list')}
           >
@@ -37,7 +37,15 @@ function Dashboard({ currentView, onViewChange, onLogout, onAddProperty }) {
           </button>
         </li>
         <li>
-          <button 
+          <button
+            className={currentView === 'images-list' || currentView === 'images-manager' ? 'active' : ''}
+            onClick={() => onViewChange('images-list')}
+          >
+            Property Images
+          </button>
+        </li>
+        <li>
+          <button
             className={currentView === 'form' ? 'active' : ''}
             onClick={onAddProperty}
           >

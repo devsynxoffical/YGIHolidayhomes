@@ -423,12 +423,47 @@ const PropertyPhotos = ({ property, onNavigate }) => {
         "/Urban retreat/Bathroom 1/1e0b7383-3ba3-445e-a449-836b579f5ee2.jpeg"
       ],
       location: "Urban Retreat, Prime Dubai Location"
+    },
+    7: {
+      id: 7,
+      title: "Luxurious & Elegant 2BR near Burj Khalifa • Standpoint Tower A",
+      area: "Downtown Dubai",
+      bedrooms: 2,
+      bathrooms: 2,
+      guests: 4,
+      beds: 3,
+      price: 1800,
+      rating: 5,
+      dtcm: "DOW-STA-51PDN",
+      featured: true,
+      new: true,
+      images: [
+        "/downtown-standpoint-tower/living-room/286952df-362f-44c6-8e40-717697937f95.avif",
+        "/downtown-standpoint-tower/bedroom-1/2eb77e31-56cb-4ea3-af60-0d92560ff268.avif",
+        "/downtown-standpoint-tower/bedroom-2/06664f70-91dc-4013-b2fe-6aae1f7e8417.avif",
+        "/downtown-standpoint-tower/kitchen/39b1c808-2511-4918-957f-f6819e539dc8.avif",
+        "/downtown-standpoint-tower/balcony/213690ff-21a8-43c1-8cbc-121c887da372.avif",
+        "/downtown-standpoint-tower/balcony/b1.jpeg",
+        "/downtown-standpoint-tower/balcony/b2.jpeg"
+      ],
+      location: "Standpoint Tower A, Downtown Dubai"
     }
   };
 
   // Get the current property data - prioritize API data over hardcoded
   const getPropertyData = () => {
-    // If property has images from API, use them directly
+    // Priority 1: Use local data for images if available to ensure correct categorization and sequence
+    if (property && property.id && allProperties[property.id]) {
+      return {
+        ...allProperties[property.id], // Base on local data
+        ...property, // Override with dynamic data (price, availability)
+        images: allProperties[property.id].images, // FORCE local images
+        title: property.title || allProperties[property.id].title,
+        location: property.location || allProperties[property.id].location
+      };
+    }
+
+    // Priority 2: Use API/Prop data if available
     if (property && property.images && property.images.length > 0) {
       return {
         ...property,
@@ -437,39 +472,11 @@ const PropertyPhotos = ({ property, onNavigate }) => {
       };
     }
 
-    // Fallback to hardcoded data if no property or no images
-    if (!property) return allProperties[1];
-
-    // Try to find property by ID first
-    if (property.id && allProperties[property.id]) {
-      return {
-        ...allProperties[property.id],
-        ...property, // Use passed property data to override
-        title: property.title || allProperties[property.id].title,
-        location: property.location || allProperties[property.id].location
-      };
-    }
-
-    // Try to find property by title
-    const titleMatch = Object.values(allProperties).find(p =>
-      p.title.toLowerCase().includes(property.title?.toLowerCase() || '') ||
-      (property.title?.toLowerCase() || '').includes(p.title.toLowerCase())
-    );
-
-    if (titleMatch) {
-      return {
-        ...titleMatch,
-        ...property, // Use passed property data to override
-        title: property.title || titleMatch.title,
-        location: property.location || titleMatch.location
-      };
-    }
-
-    // Default to Princess Tower
+    // Priority 3: Fallback (Princess Tower)
     return {
       ...allProperties[1],
-      ...property, // Use passed property data (including images) to override defaults
-      images: property.images || allProperties[1].images,
+      ...property,
+      images: allProperties[1].images,
       title: property.title || allProperties[1].title,
       location: property.location || allProperties[1].location
     };
@@ -486,9 +493,9 @@ const PropertyPhotos = ({ property, onNavigate }) => {
   // Helper function to extract category from image path/URL
   const getImageCategory = (imagePath) => {
     if (!imagePath) return 'Other';
-    
+
     const pathStr = typeof imagePath === 'string' ? imagePath : '';
-    
+
     // Check for category keywords in the path
     if (pathStr.includes('Living Room') || pathStr.includes('Living room') || pathStr.includes('living-room')) {
       return 'Living Room';
@@ -520,7 +527,7 @@ const PropertyPhotos = ({ property, onNavigate }) => {
     if (pathStr.includes('Otherpics') || pathStr.includes('Other')) {
       return 'Other';
     }
-    
+
     return 'Other';
   };
 

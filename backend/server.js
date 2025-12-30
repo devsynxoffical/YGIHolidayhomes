@@ -37,7 +37,7 @@ const { connectMongoDB, getBucket, getDB } = require('./config/mongodb');
 const { ObjectId } = require('mongodb');
 
 // Configure multer for file uploads (memory storage for GridFS)
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
@@ -46,7 +46,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(helmet());
+// Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(morgan('combined'));
 // Define allowed origins
 const allowedOrigins = [
@@ -98,17 +101,17 @@ connectMongoDB().catch(console.error);
 // Health check endpoint - should be accessible without CORS issues
 app.get('/health', (req, res) => {
   try {
-    res.json({ 
-      status: 'OK', 
+    res.json({
+      status: 'OK',
       message: 'YGI Backend API is running',
       timestamp: new Date().toISOString(),
       uptime: process.uptime()
     });
   } catch (error) {
     console.error('Health check error:', error);
-    res.status(500).json({ 
-      status: 'ERROR', 
-      message: 'Health check failed' 
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'Health check failed'
     });
   }
 });
@@ -333,7 +336,7 @@ app.post('/create-booking', async (req, res) => {
 app.post('/log-sheets-submission', async (req, res) => {
   try {
     const { success, message, bookingData, error } = req.body;
-    
+
     if (success) {
       console.log('✅ Google Sheets submission successful:', {
         message: message,
@@ -363,17 +366,17 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 const authenticateAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No token provided' });
   }
-  
+
   const token = authHeader.substring(7);
-  
+
   if (token !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
-  
+
   next();
 };
 
@@ -440,27 +443,27 @@ app.post('/api/images/upload', authenticateAdmin, upload.single('image'), async 
       // Return full URL for the image
       // Use environment variable or construct from request
       let baseUrl = process.env.BACKEND_URL || process.env.RAILWAY_PUBLIC_DOMAIN;
-      
+
       // If BACKEND_URL is set but doesn't have protocol, add it
       if (baseUrl && !baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
         baseUrl = `https://${baseUrl}`;
       }
-      
+
       if (!baseUrl) {
         // Fallback: construct from request
         const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
         const host = req.headers['x-forwarded-host'] || req.get('host') || 'ygiholidayhomes-production.up.railway.app';
         baseUrl = `${protocol}://${host}`;
       }
-      
+
       // Ensure baseUrl doesn't end with /
       baseUrl = baseUrl.replace(/\/$/, '');
-      
+
       // Construct image URL - ensure we don't duplicate the domain
       const imageUrl = `${baseUrl}/api/images/${uploadStream.id}`;
-      
+
       console.log('✅ Image uploaded, returning URL:', imageUrl); // Debug log
-      
+
       res.json({
         success: true,
         imageId: uploadStream.id.toString(),
@@ -493,7 +496,7 @@ app.get('/api/images/:imageId/metadata', async (req, res) => {
 
     const file = files[0];
     const baseUrl = process.env.BACKEND_URL || req.protocol + '://' + req.get('host');
-    
+
     res.json({
       success: true,
       imageId: file._id.toString(),
@@ -526,7 +529,7 @@ app.options('/api/images/:imageId', (req, res) => {
 app.get('/api/images/:imageId', async (req, res) => {
   try {
     const bucket = await getBucket();
-    
+
     // Set CORS headers before any response
     res.set({
       'Access-Control-Allow-Origin': '*',
@@ -562,7 +565,7 @@ app.get('/api/images/:imageId', async (req, res) => {
     }
 
     const file = files[0];
-    
+
     // Set appropriate headers with CORS
     res.set({
       'Content-Type': file.metadata?.mimeType || 'image/jpeg',
@@ -643,7 +646,7 @@ app.get('/api/images/filename/:filename', async (req, res) => {
       if (uuidMatch) {
         const uuidFilename = uuidMatch[1];
         console.log(`🔍 Trying to find by UUID filename: "${uuidFilename}"`);
-        const files = await bucket.find({ 
+        const files = await bucket.find({
           filename: { $regex: uuidFilename, $options: 'i' }
         }).sort({ uploadDate: -1 }).limit(1).toArray();
         if (files.length > 0) {
@@ -663,7 +666,7 @@ app.get('/api/images/filename/:filename', async (req, res) => {
         'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
       });
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Image not found',
         tried: filenameVariations.slice(0, 3) // Don't log all variations
       });
@@ -710,7 +713,7 @@ app.get('/api/admin/images', authenticateAdmin, async (req, res) => {
   try {
     const bucket = await getBucket();
     const propertyId = req.query.propertyId;
-    
+
     let query = {};
     if (propertyId) {
       query['metadata.propertyId'] = propertyId;
@@ -756,7 +759,7 @@ app.get('/api/properties', async (req, res) => {
       'Pragma': 'no-cache',
       'Expires': '0'
     });
-    
+
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
     const properties = JSON.parse(data);
     res.json({ success: true, properties });
@@ -773,8 +776,8 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
     const propertiesData = await fs.readFile(PROPERTIES_FILE, 'utf8').catch(() => '[]');
     const properties = JSON.parse(propertiesData);
     const totalProperties = Array.isArray(properties) ? properties.length : 0;
-    const availableProperties = Array.isArray(properties) 
-      ? properties.filter(p => p.available !== false).length 
+    const availableProperties = Array.isArray(properties)
+      ? properties.filter(p => p.available !== false).length
       : 0;
 
     // Get bookings from file
@@ -798,29 +801,29 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
     let totalBookings = 0;
     let currentBookings = 0;
     const bookingsPaymentIntentIds = new Set(bookings.map(b => b.paymentIntentId).filter(id => id));
-    
+
     try {
       // Fetch all payment intents (paginate if needed for complete data)
       let allPaymentIntents = [];
       let hasMore = true;
       let startingAfter = null;
-      
+
       while (hasMore) {
         const params = { limit: 100 };
         if (startingAfter) {
           params.starting_after = startingAfter;
         }
-        
+
         const paymentIntents = await stripe.paymentIntents.list(params);
         allPaymentIntents = allPaymentIntents.concat(paymentIntents.data);
-        
+
         hasMore = paymentIntents.has_more;
         if (hasMore && paymentIntents.data.length > 0) {
           startingAfter = paymentIntents.data[paymentIntents.data.length - 1].id;
         } else {
           hasMore = false;
         }
-        
+
         // Safety limit: don't fetch more than 1000 payment intents
         if (allPaymentIntents.length >= 1000) {
           hasMore = false;
@@ -831,22 +834,22 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
       allPaymentIntents.forEach(pi => {
         if (pi.status === 'succeeded') {
           // Check if this is a valid booking (has required metadata)
-          const hasPropertyName = pi.metadata?.propertyName && 
-                                  pi.metadata.propertyName !== 'null' && 
-                                  pi.metadata.propertyName !== 'Unknown Property';
-          const hasGuestName = pi.metadata?.guestName && 
-                               pi.metadata.guestName !== 'null' && 
-                               pi.metadata.guestName !== 'Unknown Guest';
-          const hasCheckIn = pi.metadata?.checkIn && 
-                             pi.metadata.checkIn !== 'null';
-          const hasCheckOut = pi.metadata?.checkOut && 
-                              pi.metadata.checkOut !== 'null';
-          
+          const hasPropertyName = pi.metadata?.propertyName &&
+            pi.metadata.propertyName !== 'null' &&
+            pi.metadata.propertyName !== 'Unknown Property';
+          const hasGuestName = pi.metadata?.guestName &&
+            pi.metadata.guestName !== 'null' &&
+            pi.metadata.guestName !== 'Unknown Guest';
+          const hasCheckIn = pi.metadata?.checkIn &&
+            pi.metadata.checkIn !== 'null';
+          const hasCheckOut = pi.metadata?.checkOut &&
+            pi.metadata.checkOut !== 'null';
+
           // Only count if it has all required booking information
           if (hasPropertyName && hasGuestName && hasCheckIn && hasCheckOut) {
             const amount = pi.amount / 100;
             const created = new Date(pi.created * 1000);
-            
+
             // Validate dates are not epoch or invalid
             try {
               const checkInDate = new Date(pi.metadata.checkIn);
@@ -860,13 +863,13 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
             } catch (e) {
               return; // Skip if date parsing fails
             }
-            
+
             // Count as valid booking
             totalBookings++;
             if (created >= thirtyDaysAgo) {
               currentBookings++;
             }
-            
+
             // Add revenue from valid bookings only
             totalRevenue += amount;
             if (created >= startOfMonth) {
@@ -883,7 +886,7 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
         const bookingDate = new Date(b.bookingDate);
         return bookingDate >= thirtyDaysAgo;
       }).length;
-      
+
       bookings.forEach(booking => {
         if (booking.paymentStatus === 'paid' || booking.status === 'confirmed') {
           totalRevenue += booking.totalAmount || 0;
@@ -937,7 +940,7 @@ app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
 app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
   try {
     const { filter } = req.query; // 'all', 'current', 'confirmed', 'pending'
-    
+
     // Read bookings from file
     let bookings = [];
     try {
@@ -961,22 +964,22 @@ app.get('/api/admin/bookings', authenticateAdmin, async (req, res) => {
         if (pi.status === 'succeeded') {
           // Check if already in bookings
           const exists = bookings.some(b => b.paymentIntentId === pi.id);
-          
+
           // Only create booking from Stripe if it has meaningful metadata
           // Skip incomplete bookings (missing property name, guest name, or dates)
-          const hasPropertyName = pi.metadata?.propertyName && 
-                                  pi.metadata.propertyName.trim() !== '' && 
-                                  pi.metadata.propertyName !== 'Unknown Property';
-          const hasGuestName = pi.metadata?.guestName && 
-                               pi.metadata.guestName.trim() !== '' && 
-                               pi.metadata.guestName !== 'Unknown Guest';
-          const hasCheckIn = pi.metadata?.checkIn && 
-                             pi.metadata.checkIn.trim() !== '' && 
-                             pi.metadata.checkIn !== 'null';
-          const hasCheckOut = pi.metadata?.checkOut && 
-                              pi.metadata.checkOut.trim() !== '' && 
-                              pi.metadata.checkOut !== 'null';
-          
+          const hasPropertyName = pi.metadata?.propertyName &&
+            pi.metadata.propertyName.trim() !== '' &&
+            pi.metadata.propertyName !== 'Unknown Property';
+          const hasGuestName = pi.metadata?.guestName &&
+            pi.metadata.guestName.trim() !== '' &&
+            pi.metadata.guestName !== 'Unknown Guest';
+          const hasCheckIn = pi.metadata?.checkIn &&
+            pi.metadata.checkIn.trim() !== '' &&
+            pi.metadata.checkIn !== 'null';
+          const hasCheckOut = pi.metadata?.checkOut &&
+            pi.metadata.checkOut.trim() !== '' &&
+            pi.metadata.checkOut !== 'null';
+
           if (!exists && hasPropertyName && hasGuestName && hasCheckIn && hasCheckOut) {
             // Create booking from Stripe metadata
             const booking = {
@@ -1071,50 +1074,50 @@ app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
       let allPaymentIntents = [];
       let hasMore = true;
       let startingAfter = null;
-      
+
       while (hasMore) {
         const params = { limit: 100 };
         if (startingAfter) {
           params.starting_after = startingAfter;
         }
-        
+
         const paymentIntents = await stripe.paymentIntents.list(params);
         allPaymentIntents = allPaymentIntents.concat(paymentIntents.data);
-        
+
         hasMore = paymentIntents.has_more;
         if (hasMore && paymentIntents.data.length > 0) {
           startingAfter = paymentIntents.data[paymentIntents.data.length - 1].id;
         } else {
           hasMore = false;
         }
-        
+
         // Safety limit: don't fetch more than 1000 payment intents
         if (allPaymentIntents.length >= 1000) {
           hasMore = false;
         }
       }
-      
+
       // Only include valid bookings (same validation as statistics endpoint)
       stripeTransactions = allPaymentIntents
         .filter(pi => {
           if (pi.status !== 'succeeded') return false;
-          
+
           // Check if this is a valid booking (has required metadata)
-          const hasPropertyName = pi.metadata?.propertyName && 
-                                  pi.metadata.propertyName !== 'null' && 
-                                  pi.metadata.propertyName !== 'Unknown Property';
-          const hasGuestName = pi.metadata?.guestName && 
-                               pi.metadata.guestName !== 'null' && 
-                               pi.metadata.guestName !== 'Unknown Guest';
-          const hasCheckIn = pi.metadata?.checkIn && 
-                             pi.metadata.checkIn !== 'null';
-          const hasCheckOut = pi.metadata?.checkOut && 
-                              pi.metadata.checkOut !== 'null';
-          
+          const hasPropertyName = pi.metadata?.propertyName &&
+            pi.metadata.propertyName !== 'null' &&
+            pi.metadata.propertyName !== 'Unknown Property';
+          const hasGuestName = pi.metadata?.guestName &&
+            pi.metadata.guestName !== 'null' &&
+            pi.metadata.guestName !== 'Unknown Guest';
+          const hasCheckIn = pi.metadata?.checkIn &&
+            pi.metadata.checkIn !== 'null';
+          const hasCheckOut = pi.metadata?.checkOut &&
+            pi.metadata.checkOut !== 'null';
+
           if (!hasPropertyName || !hasGuestName || !hasCheckIn || !hasCheckOut) {
             return false;
           }
-          
+
           // Validate dates are not epoch or invalid
           try {
             const checkInDate = new Date(pi.metadata.checkIn);
@@ -1128,7 +1131,7 @@ app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
           } catch (e) {
             return false;
           }
-          
+
           return true;
         })
         .map(pi => ({
@@ -1156,14 +1159,14 @@ app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
           type: 'booking',
           paymentIntentId: b.paymentIntentId
         })),
-      ...stripeTransactions.filter(st => 
+      ...stripeTransactions.filter(st =>
         !bookingsPaymentIntentIds.has(st.paymentIntentId)
       )
     ];
 
     // Calculate totals
     const totalRevenue = allTransactions.reduce((sum, t) => sum + t.amount, 0);
-    
+
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthlyTransactions = allTransactions.filter(t => {
@@ -1265,11 +1268,11 @@ app.get('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
     const properties = JSON.parse(data);
     const property = properties.find(p => p.id === parseInt(id));
-    
+
     if (!property) {
       return res.status(404).json({ error: 'Property not found' });
     }
-    
+
     res.json({ success: true, property });
   } catch (error) {
     console.error('Error reading property:', error);
@@ -1282,12 +1285,12 @@ app.post('/api/admin/properties', authenticateAdmin, async (req, res) => {
   try {
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
     const properties = JSON.parse(data);
-    
+
     // Generate new ID
-    const newId = properties.length > 0 
-      ? Math.max(...properties.map(p => p.id)) + 1 
+    const newId = properties.length > 0
+      ? Math.max(...properties.map(p => p.id)) + 1
       : 1;
-    
+
     // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
     // Remove relative paths (old local paths) as they won't work with MongoDB
     let validImages = [];
@@ -1298,12 +1301,12 @@ app.post('/api/admin/properties', authenticateAdmin, async (req, res) => {
           if (!img || !img.trim()) return false;
           const trimmed = img.trim();
           // Only keep full URLs (http/https) or MongoDB API paths
-          return trimmed.startsWith('http://') || 
-                 trimmed.startsWith('https://') || 
-                 trimmed.startsWith('/api/images/');
+          return trimmed.startsWith('http://') ||
+            trimmed.startsWith('https://') ||
+            trimmed.startsWith('/api/images/');
         });
     }
-    
+
     const newProperty = {
       ...req.body,
       id: newId,
@@ -1311,7 +1314,7 @@ app.post('/api/admin/properties', authenticateAdmin, async (req, res) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    
+
     // Ensure images array is properly saved
     if (newProperty.images) {
       console.log('Saving property with images:', newProperty.images.length, 'images');
@@ -1320,10 +1323,10 @@ app.post('/api/admin/properties', authenticateAdmin, async (req, res) => {
         console.log('⚠️ Filtered out', req.body.images.length - validImages.length, 'invalid image paths (relative paths)');
       }
     }
-    
+
     properties.push(newProperty);
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
-    
+
     console.log('✅ Property created:', newProperty.id);
     res.json({ success: true, property: newProperty });
   } catch (error) {
@@ -1338,16 +1341,16 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
     const properties = JSON.parse(data);
-    
+
     const index = properties.findIndex(p => p.id === parseInt(id));
-    
+
     if (index === -1) {
       return res.status(404).json({ error: 'Property not found' });
     }
-    
+
     const oldProperty = properties[index];
     const oldImages = oldProperty.images || [];
-    
+
     // Filter images: only keep full URLs (MongoDB URLs or valid http/https URLs)
     // Remove relative paths (old local paths) as they won't work with MongoDB
     let validImages = [];
@@ -1358,15 +1361,15 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
           if (!img || !img.trim()) return false;
           const trimmed = img.trim();
           // Only keep full URLs (http/https) or MongoDB API paths
-          return trimmed.startsWith('http://') || 
-                 trimmed.startsWith('https://') || 
-                 trimmed.startsWith('/api/images/');
+          return trimmed.startsWith('http://') ||
+            trimmed.startsWith('https://') ||
+            trimmed.startsWith('/api/images/');
         });
     } else if (req.body.images === undefined) {
       // If images not provided, keep existing images
       validImages = oldImages;
     }
-    
+
     // Find images that were removed (exist in oldImages but not in validImages)
     const removedImages = oldImages.filter(oldImg => {
       const oldUrl = typeof oldImg === 'string' ? oldImg : (oldImg?.url || oldImg);
@@ -1375,7 +1378,7 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
         return oldUrl === newUrl || oldUrl.trim() === newUrl.trim();
       });
     });
-    
+
     // Delete removed images from MongoDB
     if (removedImages.length > 0) {
       const bucket = await getBucket();
@@ -1395,7 +1398,7 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
         }
       }
     }
-    
+
     const updatedProperty = {
       ...oldProperty,
       ...req.body,
@@ -1403,7 +1406,7 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
       images: validImages, // Use filtered images
       updatedAt: new Date().toISOString()
     };
-    
+
     // Ensure images array is properly saved
     if (updatedProperty.images) {
       console.log('Updating property with images:', updatedProperty.images.length, 'images');
@@ -1415,10 +1418,10 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
         console.log('🗑️ Deleted', removedImages.length, 'orphaned image(s) from MongoDB');
       }
     }
-    
+
     properties[index] = updatedProperty;
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
-    
+
     console.log('✅ Property updated:', id);
     res.json({ success: true, property: properties[index] });
   } catch (error) {
@@ -1433,21 +1436,21 @@ app.delete('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
     const properties = JSON.parse(data);
-    
+
     const index = properties.findIndex(p => p.id === parseInt(id));
-    
+
     if (index === -1) {
       return res.status(404).json({ error: 'Property not found' });
     }
-    
+
     const deletedProperty = properties[index];
     const propertyImages = deletedProperty.images || [];
-    
+
     // Delete all associated images from MongoDB
     if (propertyImages.length > 0) {
       const bucket = await getBucket();
       let deletedCount = 0;
-      
+
       for (const img of propertyImages) {
         const imgUrl = typeof img === 'string' ? img : (img?.url || img);
         // Extract imageId from URL (format: https://domain/api/images/{imageId} or /api/images/{imageId})
@@ -1464,15 +1467,15 @@ app.delete('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
           }
         }
       }
-      
+
       if (deletedCount > 0) {
         console.log(`🗑️ Deleted ${deletedCount} image(s) from MongoDB for property ${id}`);
       }
     }
-    
+
     properties.splice(index, 1);
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
-    
+
     console.log('✅ Property deleted:', id);
     res.json({ success: true, message: 'Property deleted successfully' });
   } catch (error) {
@@ -1485,17 +1488,17 @@ app.delete('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { password } = req.body;
-    
+
     if (password === ADMIN_PASSWORD) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         token: ADMIN_PASSWORD,
-        message: 'Login successful' 
+        message: 'Login successful'
       });
     } else {
-      res.status(401).json({ 
-        success: false, 
-        error: 'Invalid password' 
+      res.status(401).json({
+        success: false,
+        error: 'Invalid password'
       });
     }
   } catch (error) {
@@ -1508,19 +1511,19 @@ app.post('/api/admin/login', async (req, res) => {
 app.post('/api/admin/sync-properties', authenticateAdmin, async (req, res) => {
   try {
     const { properties } = req.body;
-    
+
     if (!Array.isArray(properties)) {
       return res.status(400).json({ error: 'Properties must be an array' });
     }
-    
+
     await ensureDataDirectory();
     await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
-    
+
     console.log(`✅ Synced ${properties.length} properties to properties.json`);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `Successfully synced ${properties.length} properties`,
-      count: properties.length 
+      count: properties.length
     });
   } catch (error) {
     console.error('Error syncing properties:', error);
@@ -1533,27 +1536,27 @@ app.post('/api/admin/sync-to-frontend', authenticateAdmin, async (req, res) => {
   try {
     // Check if we're in a local environment where frontend files are accessible
     const frontendPath = path.join(__dirname, '..', 'frontend', 'src', 'data', 'properties.js');
-    
+
     try {
       await fs.access(frontendPath);
     } catch {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Frontend files not accessible. This feature only works in local development. On Railway, the frontend fetches properties from the API automatically.',
         note: 'No sync needed - frontend uses /api/properties endpoint'
       });
     }
-    
+
     const syncToFrontend = require('./sync-to-frontend');
     const result = await syncToFrontend();
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: `Successfully synced ${result.count} properties to frontend`,
-      count: result.count 
+      count: result.count
     });
   } catch (error) {
     console.error('Error syncing to frontend:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to sync to frontend',
       message: error.message,
       note: 'On Railway, frontend automatically fetches from /api/properties - no sync needed'

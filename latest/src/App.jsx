@@ -6,6 +6,8 @@ import PropertyList from './components/PropertyList';
 import PropertyForm from './components/PropertyForm';
 import BookingsView from './components/BookingsView';
 import RevenueView from './components/RevenueView';
+import PropertyImagesList from './components/PropertyImagesList';
+import PropertyImagesManager from './components/PropertyImagesManager';
 import './App.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
@@ -16,6 +18,7 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [viewParams, setViewParams] = useState({}); // For passing parameters to views
   const [editingProperty, setEditingProperty] = useState(null);
+  const [managingImagesProperty, setManagingImagesProperty] = useState(null);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -55,13 +58,23 @@ function App() {
     setCurrentView('list');
   };
 
+  const handleManageImages = (property) => {
+    setManagingImagesProperty(property);
+    setCurrentView('images-manager');
+  };
+
+  const handleImagesBack = () => {
+    setManagingImagesProperty(null);
+    setCurrentView('images-list');
+  };
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} apiBaseUrl={API_BASE_URL} />;
   }
 
   return (
     <div className="app">
-      <Dashboard 
+      <Dashboard
         currentView={currentView}
         onViewChange={(view) => {
           setCurrentView(view);
@@ -70,10 +83,10 @@ function App() {
         onLogout={handleLogout}
         onAddProperty={handleAddProperty}
       />
-      
+
       <main className="main-content">
         {currentView === 'dashboard' && (
-          <DashboardView 
+          <DashboardView
             apiBaseUrl={API_BASE_URL}
             token={token}
             onViewChange={(view, params) => {
@@ -82,18 +95,18 @@ function App() {
             }}
           />
         )}
-        
+
         {currentView === 'list' && (
-          <PropertyList 
+          <PropertyList
             apiBaseUrl={API_BASE_URL}
             token={token}
             onEdit={handleEditProperty}
             onAdd={handleAddProperty}
           />
         )}
-        
+
         {currentView === 'form' && (
-          <PropertyForm 
+          <PropertyForm
             apiBaseUrl={API_BASE_URL}
             token={token}
             property={editingProperty}
@@ -103,7 +116,7 @@ function App() {
         )}
 
         {currentView === 'bookings' && (
-          <BookingsView 
+          <BookingsView
             apiBaseUrl={API_BASE_URL}
             token={token}
             onViewChange={(view) => {
@@ -115,7 +128,7 @@ function App() {
         )}
 
         {currentView === 'revenue' && (
-          <RevenueView 
+          <RevenueView
             apiBaseUrl={API_BASE_URL}
             token={token}
             onViewChange={(view) => {
@@ -125,8 +138,25 @@ function App() {
             viewType={viewParams.type || 'all'}
           />
         )}
+
+        {currentView === 'images-list' && (
+          <PropertyImagesList
+            apiBaseUrl={API_BASE_URL}
+            token={token}
+            onViewImages={handleManageImages}
+          />
+        )}
+
+        {currentView === 'images-manager' && (
+          <PropertyImagesManager
+            apiBaseUrl={API_BASE_URL}
+            token={token}
+            property={managingImagesProperty}
+            onBack={handleImagesBack}
+          />
+        )}
       </main>
-      </div>
+    </div>
   );
 }
 
