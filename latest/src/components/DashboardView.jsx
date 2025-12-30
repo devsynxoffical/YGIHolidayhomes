@@ -30,13 +30,20 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
-    fetchStatistics();
-    // Refresh statistics every 15 seconds for more real-time updates
-    const interval = setInterval(fetchStatistics, 15000);
-    return () => clearInterval(interval);
-  }, []);
+    if (token) {
+      fetchStatistics();
+      // Refresh statistics every 15 seconds for more real-time updates
+      const interval = setInterval(fetchStatistics, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
   const fetchStatistics = async () => {
+    if (!token) {
+      console.warn('No token available, skipping statistics fetch');
+      return;
+    }
+
     try {
       setLoading(true);
       // Add cache-busting timestamp to ensure fresh data
@@ -44,12 +51,19 @@ function DashboardView({ apiBaseUrl, token, onViewChange }) {
       const response = await fetch(`${apiBaseUrl}/api/admin/statistics?t=${timestamp}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token expired or invalid - clear it and show error
+          console.error('Authentication failed - token may have expired');
+          setError('Authentication failed. Please refresh the page and login again.');
+          return;
+        }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 

@@ -43,19 +43,32 @@ function RevenueView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
   const [filter, setFilter] = useState(viewType); // 'all', 'monthly', 'property'
 
   useEffect(() => {
-    fetchRevenueData();
-  }, []);
+    if (token) {
+      fetchRevenueData();
+    }
+  }, [token]);
 
   const fetchRevenueData = async () => {
+    if (!token) {
+      console.warn('No token available, skipping revenue fetch');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(`${apiBaseUrl}/api/admin/revenue`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Authentication failed - token may have expired');
+          setError('Authentication failed. Please refresh the page and login again.');
+          return;
+        }
         throw new Error('Failed to fetch revenue data');
       }
 

@@ -156,20 +156,33 @@ function BookingsView({ apiBaseUrl, token, onViewChange, viewType = 'all' }) {
   const [filter, setFilter] = useState(viewType); // 'all', 'current', 'confirmed', 'pending'
 
   useEffect(() => {
-    fetchBookings();
-  }, [filter]);
+    if (token) {
+      fetchBookings();
+    }
+  }, [filter, token]);
 
   const fetchBookings = async () => {
+    if (!token) {
+      console.warn('No token available, skipping bookings fetch');
+      return;
+    }
+
     try {
       setLoading(true);
       const filterParam = filter === 'all' ? '' : `?filter=${filter}`;
       const response = await fetch(`${apiBaseUrl}/api/admin/bookings${filterParam}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Authentication failed - token may have expired');
+          setError('Authentication failed. Please refresh the page and login again.');
+          return;
+        }
         throw new Error('Failed to fetch bookings');
       }
 
