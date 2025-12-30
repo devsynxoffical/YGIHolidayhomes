@@ -1215,6 +1215,21 @@ app.get('/api/admin/revenue', authenticateAdmin, async (req, res) => {
       }))
       .sort((a, b) => b.revenue - a.revenue);
 
+    // Add cache-control headers to ensure fresh data
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    console.log('📊 Revenue Data (Valid Bookings Only):', {
+      totalTransactions: allTransactions.length,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
+      monthlyBreakdownCount: monthlyBreakdownArray.length,
+      propertyBreakdownCount: propertyBreakdownArray.length
+    });
+
     res.json({
       success: true,
       revenue: {
