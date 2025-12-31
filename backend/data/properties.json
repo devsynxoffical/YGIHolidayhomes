@@ -189,11 +189,11 @@
     "price": 1600,
     "rating": 4.8,
     "images": [
-      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745608576ef1f7fb6f80",
-      "https://ygiholidayhomes-production.up.railway.app/api/images/694c744f08576ef1f7fb6f5c",
-      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745108576ef1f7fb6f66",
-      "https://ygiholidayhomes-production.up.railway.app/api/images/694c745508576ef1f7fb6f7c",
-      "https://ygiholidayhomes-production.up.railway.app/api/images/694c744c08576ef1f7fb6f4e"
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74cb08576ef1f7fb7216?category=kitchen",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74ca08576ef1f7fb7212?category=bedroom-1",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74cb08576ef1f7fb7214?category=bedroom-2",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74ca08576ef1f7fb7210?category=balcony",
+      "https://ygiholidayhomes-production.up.railway.app/api/images/694c74cb08576ef1f7fb7218?category=living-room"
     ],
     "location": "Princess Tower, Dubai Marina",
     "highlights": [
@@ -352,7 +352,8 @@
       "responseRate": "100%",
       "responseTime": "<1h",
       "bio": "Professional property management with over 5 years of experience in Dubai Marina. We ensure every guest has a memorable stay."
-    }
+    },
+    "updatedAt": "2025-12-31T02:31:06.611Z"
   },
   {
     "id": 3,
