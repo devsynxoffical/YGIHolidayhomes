@@ -26,7 +26,7 @@
    The admin panel will open at `http://localhost:5173` (or the port Vite assigns)
 
 4. **Login**
-   - Default password: `admin123`
+   - Default password: `YGI@ADMIN4488`
    - Change this in production by setting `ADMIN_PASSWORD` environment variable in backend
 
 ## Environment Variables
@@ -108,7 +108,7 @@ backend/
 - Check CORS settings in backend `server.js`
 
 ### Login not working?
-- Default password is `admin123`
+- Default password is `YGI@ADMIN4488`
 - Check backend console for errors
 - Verify `ADMIN_PASSWORD` environment variable if changed
 

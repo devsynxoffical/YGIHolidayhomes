@@ -235,5 +235,5 @@ All admin endpoints require authentication via Bearer token:
 Authorization: Bearer {admin_password}
 ```
 
-The admin password is set via `ADMIN_PASSWORD` environment variable (defaults to 'admin123').
+The admin password is set via `ADMIN_PASSWORD` environment variable (defaults to 'YGI@ADMIN4488').
 

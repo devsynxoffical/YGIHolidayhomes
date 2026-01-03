@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import { useProperties } from '../../contexts/PropertiesContext';
 import { getImageUrlWithFallback } from '../../utils/imageUtils';
@@ -153,7 +153,7 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
       // Close modal and navigate to payment page
       setShowBookingModal(false);
       setSelectedProperty(null);
-      
+
       // Pass booking data to parent component for payment
       if (onBookNow) {
         onBookNow(paymentBookingData);
@@ -330,22 +330,22 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
       <div className="hero-video-section">
         <div className="video-container">
           {!videoError ? (
-          <video 
-            autoPlay 
-            muted 
-            loop 
-            playsInline
-            className="hero-video"
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="hero-video"
               onError={(e) => {
                 console.error('Video failed to load:', e.target.src);
                 setVideoError(true);
               }}
               onLoadStart={() => console.log('Video loading started')}
               onCanPlay={() => console.log('Video can play')}
-          >
+            >
               <source src="/Images/IMG_1646.MP4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+              Your browser does not support the video tag.
+            </video>
           ) : (
             <div className="video-fallback">
               <div className="fallback-bg"></div>
@@ -645,70 +645,167 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
 
 // Property Card Component
 const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
-  const imageUrl = property.images && property.images.length > 0 
-    ? getImageUrlWithFallback(property.images[0]) 
+  // Get all image URLs with fallbacks
+  const getImageUrls = () => {
+    if (!property.images || property.images.length === 0) return [];
+    
+    const urls = [];
+    property.images.forEach(img => {
+      // Handle both string URLs and object format {url: "...", category: "..."}
+      const imagePath = typeof img === 'string' ? img : (img?.url || img?.originalUrl || '');
+      if (imagePath) {
+        // Clean the image path first to remove any query parameters
+        let cleanPath = imagePath;
+        if (cleanPath.includes('?')) {
+          cleanPath = cleanPath.split('?')[0];
+        }
+        const url = getImageUrlWithFallback(cleanPath);
+        if (url) {
+          // Ensure the final URL is clean (no query parameters)
+          const finalUrl = url.includes('?') ? url.split('?')[0] : url;
+          urls.push(finalUrl);
+        }
+      }
+    });
+    return urls;
+  };
+
+  const imageUrls = getImageUrls();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
+  
+  // Use refs to track image loading state and prevent infinite loops
+  const imageIndexRef = useRef(0);
+  const isHandlingErrorRef = useRef(false);
+  const imgRef = useRef(null);
+
+  // Reset state when property changes
+  useEffect(() => {
+    imageIndexRef.current = 0;
+    setCurrentImageIndex(0);
+    setImageError(false);
+    isHandlingErrorRef.current = false;
+  }, [property.id]);
+
+  const handleImageError = (e) => {
+    // Prevent multiple simultaneous error handler calls
+    if (isHandlingErrorRef.current) {
+      return;
+    }
+    
+    isHandlingErrorRef.current = true;
+    const img = e.target;
+    const currentIndex = imageIndexRef.current;
+    const nextIndex = currentIndex + 1;
+    
+    // Try next image in the array if available
+    if (nextIndex < imageUrls.length) {
+      let nextUrl = imageUrls[nextIndex];
+      // Ensure URL is clean (remove any query parameters that might have been added)
+      if (nextUrl.includes('?')) {
+        nextUrl = nextUrl.split('?')[0];
+      }
+      console.log(`🔄 Trying next image (${nextIndex + 1}/${imageUrls.length}) for "${property.title}":`, nextUrl);
+      
+      // Update ref and state
+      imageIndexRef.current = nextIndex;
+      setCurrentImageIndex(nextIndex);
+      
+      // Update src immediately to try next image (ensure it's clean)
+      img.src = nextUrl;
+      
+      // Reset error handler flag after a short delay to allow the new image to load
+      setTimeout(() => {
+        isHandlingErrorRef.current = false;
+      }, 100);
+      return;
+    }
+    
+    // All images failed - show placeholder
+    console.warn(`❌ All images failed to load for "${property.title}". Tried ${currentIndex + 1} image(s)`);
+    setImageError(true);
+    img.onerror = null; // Prevent infinite loop
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+    img.style.objectFit = 'contain';
+    isHandlingErrorRef.current = false;
+  };
+
+  // Ensure the current image URL is clean (no query parameters)
+  const currentImageUrl = imageUrls.length > 0 && !imageError 
+    ? (imageUrls[currentImageIndex]?.includes('?') 
+        ? imageUrls[currentImageIndex].split('?')[0] 
+        : imageUrls[currentImageIndex])
     : '';
 
   return (
     <article className="property-card">
       <div className="property-image">
-        <img 
-          src={imageUrl} 
-          alt={property.title}
-          crossOrigin="anonymous"
-          onError={(e) => {
-            // Fallback to placeholder if all attempts fail
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
-            e.target.style.objectFit = 'contain';
-          }}
-        />
+        {currentImageUrl ? (
+          <img
+            ref={imgRef}
+            key={`${property.id}-img`}
+            src={currentImageUrl}
+            alt={property.title}
+            crossOrigin="anonymous"
+            data-tried-index={currentImageIndex}
+            onError={handleImageError}
+            onLoad={() => {
+              console.log(`✅ Image loaded for "${property.title}":`, currentImageUrl);
+              isHandlingErrorRef.current = false; // Reset on successful load
+            }}
+          />
+        ) : (
+          <div className="no-image-placeholder">
+            <span>Image not available</span>
+          </div>
+        )}
         {property.featured && <span className="badge featured">Featured</span>}
         <div className="rating-badge">
           <span className="star">★</span>
           <span>{property.rating}</span>
         </div>
       </div>
-      
+
       <div className="property-content">
         <h3 className="property-title">{property.title}</h3>
-        
+
         <div className="property-meta">
           <span>👥 {property.guests}</span>
           <span>🛏 {property.beds}</span>
           <span>🛁 {property.bathrooms}</span>
         </div>
-        
+
         <p className="property-location">{property.location}</p>
-        
+
         <div className="property-highlights">
           {property.highlights.slice(0, 2).map((highlight, index) => (
             <span key={index} className="highlight-tag">{highlight}</span>
           ))}
         </div>
-        
+
         <div className="property-dtcm">
           <span className="dtcm-code">DTCM: {property.dtcm}</span>
         </div>
-        
+
         <div className="property-price">
           <span className="price-label">From</span>
-          <PriceDisplay 
-            price={property.price} 
-            showPeriod={true} 
+          <PriceDisplay
+            price={property.price}
+            showPeriod={true}
             period="/ night"
             size="small"
             className="price-amount"
           />
         </div>
-        
+
         <div className="property-actions">
-          <button 
+          <button
             className="btn-secondary"
             onClick={() => onViewDetails(property)}
           >
             View Details
           </button>
-          <button 
+          <button
             className="btn-primary"
             onClick={() => onBookNow(property)}
           >
@@ -839,7 +936,7 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
           <h2>Book {property.title}</h2>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="booking-form" style={{ pointerEvents: 'auto' }}>
           <div className="booking-dates">
             <div className="date-field">
@@ -878,96 +975,96 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
 
           <div className="contact-info">
             <h3>Contact Information</h3>
-                <div className="form-group">
-                  <label htmlFor="booking-name">Full Name</label>
-                  <input
-                    id="booking-name"
-                    name="name"
-                    type="text"
-                    value={bookingData.name}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setBookingData(prev => ({ ...prev, name: e.target.value }));
-                    }}
-                    onInput={(e) => {
-                      e.stopPropagation();
-                      setBookingData(prev => ({ ...prev, name: e.target.value }));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    onFocus={(e) => e.stopPropagation()}
-                    required
-                    autoComplete="name"
-                    tabIndex={1}
-                    readOnly={false}
-                    disabled={false}
-                    style={{ 
-                      pointerEvents: 'auto', 
-                      cursor: 'text',
-                      zIndex: 10000,
-                      position: 'relative'
-                    }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="booking-email">Email</label>
-                  <input
-                    id="booking-email"
-                    name="email"
-                    type="email"
-                    value={bookingData.email}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setBookingData(prev => ({ ...prev, email: e.target.value }));
-                    }}
-                    onInput={(e) => {
-                      e.stopPropagation();
-                      setBookingData(prev => ({ ...prev, email: e.target.value }));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    onFocus={(e) => e.stopPropagation()}
-                    required
-                    autoComplete="email"
-                    tabIndex={2}
-                    readOnly={false}
-                    disabled={false}
-                    style={{ 
-                      pointerEvents: 'auto', 
-                      cursor: 'text',
-                      zIndex: 10000,
-                      position: 'relative'
-                    }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="booking-phone">Phone</label>
-                  <input
-                    id="booking-phone"
-                    name="phone"
-                    type="tel"
-                    value={bookingData.phone}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setBookingData(prev => ({ ...prev, phone: e.target.value }));
-                    }}
-                    onInput={(e) => {
-                      e.stopPropagation();
-                      setBookingData(prev => ({ ...prev, phone: e.target.value }));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    onFocus={(e) => e.stopPropagation()}
-                    required
-                    autoComplete="tel"
-                    tabIndex={3}
-                    readOnly={false}
-                    disabled={false}
-                    style={{ 
-                      pointerEvents: 'auto', 
-                      cursor: 'text',
-                      zIndex: 10000,
-                      position: 'relative'
-                    }}
-                  />
-                </div>
+            <div className="form-group">
+              <label htmlFor="booking-name">Full Name</label>
+              <input
+                id="booking-name"
+                name="name"
+                type="text"
+                value={bookingData.name}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setBookingData(prev => ({ ...prev, name: e.target.value }));
+                }}
+                onInput={(e) => {
+                  e.stopPropagation();
+                  setBookingData(prev => ({ ...prev, name: e.target.value }));
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                required
+                autoComplete="name"
+                tabIndex={1}
+                readOnly={false}
+                disabled={false}
+                style={{
+                  pointerEvents: 'auto',
+                  cursor: 'text',
+                  zIndex: 10000,
+                  position: 'relative'
+                }}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="booking-email">Email</label>
+              <input
+                id="booking-email"
+                name="email"
+                type="email"
+                value={bookingData.email}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setBookingData(prev => ({ ...prev, email: e.target.value }));
+                }}
+                onInput={(e) => {
+                  e.stopPropagation();
+                  setBookingData(prev => ({ ...prev, email: e.target.value }));
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                required
+                autoComplete="email"
+                tabIndex={2}
+                readOnly={false}
+                disabled={false}
+                style={{
+                  pointerEvents: 'auto',
+                  cursor: 'text',
+                  zIndex: 10000,
+                  position: 'relative'
+                }}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="booking-phone">Phone</label>
+              <input
+                id="booking-phone"
+                name="phone"
+                type="tel"
+                value={bookingData.phone}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setBookingData(prev => ({ ...prev, phone: e.target.value }));
+                }}
+                onInput={(e) => {
+                  e.stopPropagation();
+                  setBookingData(prev => ({ ...prev, phone: e.target.value }));
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                required
+                autoComplete="tel"
+                tabIndex={3}
+                readOnly={false}
+                disabled={false}
+                style={{
+                  pointerEvents: 'auto',
+                  cursor: 'text',
+                  zIndex: 10000,
+                  position: 'relative'
+                }}
+              />
+            </div>
           </div>
 
           <div className="booking-summary">
@@ -976,22 +1073,22 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
               const pricing = getPricingDetails();
               return (
                 <>
-            <div className="summary-line">
-              <span>
+                  <div className="summary-line">
+                    <span>
                       <PriceDisplay price={property.price} size="small" /> × {pricing.nights} nights
-              </span>
+                    </span>
                     <PriceDisplay price={pricing.basePrice} size="small" />
-            </div>
-            {pricing.cleaningFee > 0 && (
-              <div className="summary-line">
-                <span>Cleaning fee</span>
-                <PriceDisplay price={pricing.cleaningFee} size="small" />
-              </div>
-            )}
-            <div className="summary-line">
+                  </div>
+                  {pricing.cleaningFee > 0 && (
+                    <div className="summary-line">
+                      <span>Cleaning fee</span>
+                      <PriceDisplay price={pricing.cleaningFee} size="small" />
+                    </div>
+                  )}
+                  <div className="summary-line">
                     <span>Service charges</span>
                     <PriceDisplay price={pricing.taxes} size="small" />
-            </div>
+                  </div>
 
                   {!property.excludeDiscount && (
                     <div className="summary-line subtotal">
@@ -1012,10 +1109,10 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
                     </div>
                   )}
 
-            <div className="summary-line total">
-              <span>Total</span>
+                  <div className="summary-line total">
+                    <span>Total</span>
                     <PriceDisplay price={pricing.finalTotal} size="medium" className="price-primary" />
-            </div>
+                  </div>
 
                   {!property.excludeDiscount && pricing.automaticDiscount > 0 && (
                     <div className="savings-badge automatic-savings">

@@ -19,7 +19,7 @@ export const PropertiesProvider = ({ children }) => {
         const timestamp = new Date().getTime();
         const url = `${API_BASE_URL}/api/properties?_t=${timestamp}`;
         console.log(`🔄 Fetching properties from: ${url}`);
-        
+
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -28,9 +28,9 @@ export const PropertiesProvider = ({ children }) => {
             'Pragma': 'no-cache'
           },
         });
-        
+
         console.log('API Response status:', response.status, response.statusText);
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('API Error Response:', errorText);
@@ -39,7 +39,7 @@ export const PropertiesProvider = ({ children }) => {
 
         const data = await response.json();
         console.log('API Response data:', data);
-        
+
         if (data.success && data.properties && data.properties.length > 0) {
           setProperties(data.properties);
           setError(null);
@@ -69,7 +69,7 @@ export const PropertiesProvider = ({ children }) => {
     };
 
     fetchProperties();
-    
+
     // Refresh properties every 5 minutes to ensure fresh data
     const refreshInterval = setInterval(fetchProperties, 5 * 60 * 1000);
     return () => clearInterval(refreshInterval);

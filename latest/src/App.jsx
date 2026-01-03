@@ -8,6 +8,7 @@ import BookingsView from './components/BookingsView';
 import RevenueView from './components/RevenueView';
 import PropertyImagesList from './components/PropertyImagesList';
 import PropertyImagesManager from './components/PropertyImagesManager';
+import { NotificationProvider } from './components/common/NotificationContext';
 import './App.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
@@ -73,90 +74,92 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <Dashboard
-        currentView={currentView}
-        onViewChange={(view) => {
-          setCurrentView(view);
-          setViewParams({});
-        }}
-        onLogout={handleLogout}
-        onAddProperty={handleAddProperty}
-      />
+    <NotificationProvider>
+      <div className="app">
+        <Dashboard
+          currentView={currentView}
+          onViewChange={(view) => {
+            setCurrentView(view);
+            setViewParams({});
+          }}
+          onLogout={handleLogout}
+          onAddProperty={handleAddProperty}
+        />
 
-      <main className="main-content">
-        {currentView === 'dashboard' && (
-          <DashboardView
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            onViewChange={(view, params) => {
-              setCurrentView(view);
-              setViewParams(params || {});
-            }}
-          />
-        )}
+        <main className="main-content">
+          {currentView === 'dashboard' && (
+            <DashboardView
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              onViewChange={(view, params) => {
+                setCurrentView(view);
+                setViewParams(params || {});
+              }}
+            />
+          )}
 
-        {currentView === 'list' && (
-          <PropertyList
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            onEdit={handleEditProperty}
-            onAdd={handleAddProperty}
-          />
-        )}
+          {currentView === 'list' && (
+            <PropertyList
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              onEdit={handleEditProperty}
+              onAdd={handleAddProperty}
+            />
+          )}
 
-        {currentView === 'form' && (
-          <PropertyForm
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            property={editingProperty}
-            onCancel={handleFormCancel}
-            onSuccess={() => setCurrentView('list')}
-          />
-        )}
+          {currentView === 'form' && (
+            <PropertyForm
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              property={editingProperty}
+              onCancel={handleFormCancel}
+              onSuccess={() => setCurrentView('list')}
+            />
+          )}
 
-        {currentView === 'bookings' && (
-          <BookingsView
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            onViewChange={(view) => {
-              setCurrentView(view);
-              setViewParams({});
-            }}
-            viewType={viewParams.type || 'all'}
-          />
-        )}
+          {currentView === 'bookings' && (
+            <BookingsView
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              onViewChange={(view) => {
+                setCurrentView(view);
+                setViewParams({});
+              }}
+              viewType={viewParams.type || 'all'}
+            />
+          )}
 
-        {currentView === 'revenue' && (
-          <RevenueView
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            onViewChange={(view) => {
-              setCurrentView(view);
-              setViewParams({});
-            }}
-            viewType={viewParams.type || 'all'}
-          />
-        )}
+          {currentView === 'revenue' && (
+            <RevenueView
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              onViewChange={(view) => {
+                setCurrentView(view);
+                setViewParams({});
+              }}
+              viewType={viewParams.type || 'all'}
+            />
+          )}
 
-        {currentView === 'images-list' && (
-          <PropertyImagesList
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            onViewImages={handleManageImages}
-          />
-        )}
+          {currentView === 'images-list' && (
+            <PropertyImagesList
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              onViewImages={handleManageImages}
+            />
+          )}
 
-        {currentView === 'images-manager' && (
-          <PropertyImagesManager
-            apiBaseUrl={API_BASE_URL}
-            token={token}
-            property={managingImagesProperty}
-            onBack={handleImagesBack}
-          />
-        )}
-      </main>
-    </div>
+          {currentView === 'images-manager' && (
+            <PropertyImagesManager
+              apiBaseUrl={API_BASE_URL}
+              token={token}
+              property={managingImagesProperty}
+              onBack={handleImagesBack}
+            />
+          )}
+        </main>
+      </div>
+    </NotificationProvider>
   );
 }
 

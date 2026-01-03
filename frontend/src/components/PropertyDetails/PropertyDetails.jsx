@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getImageUrlWithFallback } from '../../utils/imageUtils';
+import { properties as localProperties } from '../../data/properties';
 import './PropertyDetails.css';
 
 const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
@@ -75,12 +76,31 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     return <div className="property-loading">Loading property details...</div>;
   }
 
+  // Merge images for display (API + Local)
+  const getDisplayProperty = () => {
+    const isLegacyId = property && (
+      (typeof property.id === 'string' && /^[1-7]$/.test(property.id)) ||
+      (typeof property.id === 'number' && property.id >= 1 && property.id <= 7)
+    );
+    const localData = isLegacyId ? localProperties.find(p => p.id === property.id || p.id === parseInt(property.id)) : null;
+    const apiImages = property.images || [];
+    const localImages = (localData && localData.images) || [];
+    const combinedImages = [...new Set([...apiImages, ...localImages])];
+
+    return {
+      ...property,
+      images: combinedImages.length > 0 ? combinedImages : property.images // fallback
+    };
+  };
+
+  const displayProperty = getDisplayProperty();
+
   return (
     <div className="property-details-page">
       {/* Back Button */}
       <button className="back-button" onClick={handleBackClick} aria-label="Back to properties">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         <span>Back to Properties</span>
       </button>
@@ -89,9 +109,9 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
       <section className="property-hero">
         <div className="property-gallery-grid">
           <div className="main-image">
-            {property.images && property.images.length > 0 ? (
-              <img 
-                src={getImageUrlWithFallback(property.images[0])} 
+            {displayProperty.images && displayProperty.images.length > 0 ? (
+              <img
+                src={getImageUrlWithFallback(displayProperty.images[0])}
                 alt={property.title}
                 crossOrigin="anonymous"
                 onError={(e) => {
@@ -109,10 +129,10 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
             </div>
           </div>
           <div className="side-images">
-            {property.images && property.images.slice(1, 5).map((img, index) => (
+            {displayProperty.images && displayProperty.images.slice(1, 5).map((img, index) => (
               <div key={index} className="side-image-item">
-                <img 
-                  src={getImageUrlWithFallback(img)} 
+                <img
+                  src={getImageUrlWithFallback(img)}
                   alt={`View ${index + 1}`}
                   crossOrigin="anonymous"
                   onError={(e) => {
@@ -125,7 +145,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
             ))}
           </div>
 
-          <button className="view-all-photos-btn" onClick={() => onNavigate('property-photos', property)}>
+          <button className="view-all-photos-btn" onClick={() => onNavigate('property-photos', displayProperty)}>
             Show all photos
           </button>
         </div>
@@ -397,7 +417,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               const subtotal = basePrice + cleaningFee + taxes;
               const discount = property.excludeDiscount ? 0 : subtotal * 0.30;
               const total = subtotal - discount;
-              
+
               return (
                 <div className="price-calculation">
                   <div className="calc-row">

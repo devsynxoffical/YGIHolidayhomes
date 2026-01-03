@@ -116,7 +116,7 @@ npm run dev
 Admin panel opens at `http://localhost:5173`
 
 ### Step 4: Login
-- Password: `admin123` (default)
+- Password: `YGI@ADMIN4488` (default)
 - Change in production via `ADMIN_PASSWORD` env variable
 
 ## 🔒 Security Notes

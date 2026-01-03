@@ -39,7 +39,7 @@ npm run dev
 
 ## Default Login
 
-- **Password**: `admin123`
+- **Password**: `YGI@ADMIN4488`
 
 ⚠️ **Important**: Change the default password in production by setting the `ADMIN_PASSWORD` environment variable in the backend.
 

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNotification } from './common/NotificationContext';
 import './PropertyForm.css';
 
 function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
+  const { showNotification } = useNotification();
   const [formData, setFormData] = useState({
     title: '',
     metaTitle: '',
@@ -385,12 +387,15 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
       }
 
       // Show success message
-      alert(`✅ Property ${property ? 'updated' : 'created'} successfully!\n\n` +
-        `✅ Changes are now live! The frontend automatically fetches from the API, so your changes will appear on the website immediately after refresh.`);
+      showNotification(
+        `✅ Property ${property ? 'updated' : 'created'} successfully!\n\n` +
+        `✅ Changes are now live! The frontend automatically fetches from the API, so your changes will appear on the website immediately after refresh.`
+      );
 
       onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to save property');
+      showNotification(`❌ Error: ${err.message}`, 'error');
       console.error('Error saving property:', err);
     } finally {
       setLoading(false);

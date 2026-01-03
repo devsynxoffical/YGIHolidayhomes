@@ -362,7 +362,7 @@ app.post('/log-sheets-submission', async (req, res) => {
 // ==================== ADMIN PANEL API ENDPOINTS ====================
 
 // Simple authentication middleware (in production, use JWT or sessions)
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'YGI@ADMIN4488';
 
 const authenticateAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;

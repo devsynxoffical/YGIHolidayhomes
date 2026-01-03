@@ -1,69 +1,101 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNotification } from './common/NotificationContext';
 import './PropertyList.css';
 
 // Website URL where images are hosted
 const WEBSITE_URL = import.meta.env.VITE_WEBSITE_URL || 'https://www.ygiholidayhomes.com';
 
+// Helper function to clean image URL by removing query parameters (especially category)
+const cleanImageUrl = (url) => {
+  if (!url) return url;
+
+  try {
+    // Remove query parameters (especially category parameter which is metadata only)
+    // The API doesn't need these parameters to serve the image
+    const urlObj = new URL(url);
+    urlObj.search = ''; // Remove all query parameters
+    return urlObj.toString();
+  } catch (e) {
+    // If URL parsing fails (e.g., relative path or invalid URL), manually remove query params
+    return url.split('?')[0].split('&')[0];
+  }
+};
+
 // Helper function to convert relative image paths to absolute URLs
 // Returns an array of URLs to try (MongoDB first, then website URL for old paths)
 const getImageUrls = (imagePath, apiBaseUrl) => {
   if (!imagePath) return [];
-  
-  // If already an absolute URL (http/https), return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return [imagePath];
+
+  // Remove query parameters first (category, etc.) - they're metadata only
+  let cleanPath = imagePath;
+  if (cleanPath.includes('?')) {
+    cleanPath = cleanPath.split('?')[0];
   }
-  
+
+  // If already an absolute URL (http/https), return cleaned version
+  if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+    return [cleanImageUrl(cleanPath)];
+  }
+
   // If it's a MongoDB image path (/api/images/...)
-  if (imagePath.includes('/api/images/')) {
+  if (cleanPath.includes('/api/images/')) {
     // Check if it's already a full URL
-    if (imagePath.startsWith('http')) {
-      return [imagePath];
+    if (cleanPath.startsWith('http')) {
+      return [cleanImageUrl(cleanPath)];
     }
-    // It's a relative path, construct full URL
-    return [`${apiBaseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`];
+    // It's a relative path, construct full URL and clean it
+    const fullUrl = `${apiBaseUrl}${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`;
+    return [cleanImageUrl(fullUrl)];
   }
-  
+
+  // Check if it's a MongoDB image ID (24 character hex string)
+  // Remove any trailing characters that might be added (like :1)
+  const idMatch = cleanPath.match(/^([0-9a-fA-F]{24})/);
+  if (idMatch) {
+    return [`${apiBaseUrl}/api/images/${idMatch[1]}`];
+  }
+
   // For old relative paths (starting with ./), try MongoDB first
   // Only add website URL fallback if not on localhost (to avoid CORS issues)
-  if (imagePath.startsWith('./')) {
-    const cleanPath = imagePath.replace(/^\.\//, '').replace(/\\/g, '/');
-    const encodedFilename = encodeURIComponent(cleanPath);
-    
+  if (cleanPath.startsWith('./')) {
+    const pathWithoutPrefix = cleanPath.replace(/^\.\//, '').replace(/\\/g, '/');
+    const encodedFilename = encodeURIComponent(pathWithoutPrefix);
+
     const urls = [`${apiBaseUrl}/api/images/filename/${encodedFilename}`];
-    
+
     // Only add website URL fallback if not on localhost
     if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
-      const websitePath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+      const websitePath = pathWithoutPrefix.startsWith('/') ? pathWithoutPrefix : '/' + pathWithoutPrefix;
       const websiteUrl = `${WEBSITE_URL}${websitePath}`;
       urls.push(websiteUrl);
     }
-    
+
     return urls; // Try MongoDB first, then website (if not localhost)
   }
-  
+
   // If it's not a full URL and not a MongoDB path, try website URL (only if not localhost)
-  if (!imagePath.startsWith('http') && !imagePath.startsWith('/api')) {
+  if (!cleanPath.startsWith('http') && !cleanPath.startsWith('/api') && !cleanPath.match(/^[0-9a-fA-F]{24}/)) {
     // On localhost, don't try website URL (will fail CORS)
     if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
       return []; // Return empty array, will show placeholder
     }
-    
-    let cleanPath = imagePath;
-    if (cleanPath.startsWith('./')) {
-      cleanPath = cleanPath.substring(1); // Remove ./
+
+    let pathForWebsite = cleanPath;
+    if (pathForWebsite.startsWith('./')) {
+      pathForWebsite = pathForWebsite.substring(1); // Remove ./
     }
     // Ensure path starts with /
-    if (!cleanPath.startsWith('/')) {
-      cleanPath = '/' + cleanPath;
+    if (!pathForWebsite.startsWith('/')) {
+      pathForWebsite = '/' + pathForWebsite;
     }
-    return [`${WEBSITE_URL}${cleanPath}`];
+    return [`${WEBSITE_URL}${pathForWebsite}`];
   }
-  
+
   return [];
 };
 
 function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
+  const { showNotification } = useNotification();
   // Dummy properties data for when backend is not connected
   const DUMMY_PROPERTIES = [
     {
@@ -180,10 +212,10 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
 
       const data = await response.json();
       console.log('Properties API response:', data);
-      
+
       // Ensure we're getting the same data structure as frontend
       const fetchedProperties = data.properties || data || [];
-      
+
       if (Array.isArray(fetchedProperties) && fetchedProperties.length > 0) {
         setProperties(fetchedProperties);
         setUsingDummyData(false);
@@ -198,7 +230,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       const errorMsg = err.message || 'Failed to load properties';
       console.error('Error fetching properties:', err);
       console.error('API URL:', `${apiBaseUrl}/api/properties`);
-      
+
       // Only use dummy data if we have no properties and backend failed
       if (properties.length === 0) {
         setProperties(DUMMY_PROPERTIES);
@@ -221,7 +253,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
     // If using dummy data, just remove from local state
     if (usingDummyData) {
       setProperties(properties.filter(p => p.id !== id));
-      alert('Property removed from demo data. Changes will be lost on refresh.');
+      showNotification('Property removed from demo data. Changes will be lost on refresh.', 'info');
       return;
     }
 
@@ -240,7 +272,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       // Refresh the list
       fetchProperties();
     } catch (err) {
-      alert('Failed to delete property');
+      showNotification('Failed to delete property', 'error');
       console.error('Error deleting property:', err);
     }
   };
@@ -264,7 +296,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
       </div>
 
       {error && !usingDummyData && (
-        <div className="error-banner" style={{ 
+        <div className="error-banner" style={{
           backgroundColor: '#f8d7da',
           color: '#721c24',
           border: '1px solid #f5c6cb',
@@ -275,13 +307,13 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
           {error}
           <br />
           <small style={{ marginTop: '10px', display: 'block' }}>
-            💡 Tip: Check the browser console (F12) for more details. 
+            💡 Tip: Check the browser console (F12) for more details.
             If properties.json is empty, you can add properties manually using the "Add Property" button.
           </small>
         </div>
       )}
       {usingDummyData && (
-        <div style={{ 
+        <div style={{
           backgroundColor: '#d1ecf1',
           color: '#0c5460',
           border: '1px solid #bee5eb',
@@ -294,7 +326,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
         </div>
       )}
       {!usingDummyData && properties.length > 0 && (
-        <div style={{ 
+        <div style={{
           backgroundColor: '#d4edda',
           color: '#155724',
           border: '1px solid #c3e6cb',
@@ -331,40 +363,51 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
                   // Try to find valid image URLs
                   // For old relative paths, we'll try MongoDB first, then website URL
                   let allImageUrls = [];
-                  
+
                   if (property.images && property.images.length > 0) {
                     for (const img of property.images) {
-                      const urls = getImageUrls(img, apiBaseUrl);
-                      if (urls.length > 0) {
-                        allImageUrls.push(...urls);
-                        // If we found a MongoDB URL (not from old path), prefer it
-                        const hasMongoUrl = urls.some(url => url.includes('/api/images/') && !url.includes('/api/images/filename/'));
-                        if (hasMongoUrl) {
-                          break; // Found direct MongoDB URL, use it
+                      // Handle both string URLs and object format {url: "...", category: "..."}
+                      const imagePath = typeof img === 'string' ? img : (img?.url || img?.originalUrl || '');
+                      if (imagePath) {
+                        const urls = getImageUrls(imagePath, apiBaseUrl);
+                        if (urls.length > 0) {
+                          allImageUrls.push(...urls);
+                          // If we found a MongoDB URL (not from old path), prefer it
+                          const hasMongoUrl = urls.some(url => url.includes('/api/images/') && !url.includes('/api/images/filename/'));
+                          if (hasMongoUrl) {
+                            break; // Found direct MongoDB URL, use it
+                          }
                         }
                       }
                     }
                   }
-                  
+
                   // Use first available URL, keep rest for fallback
                   const finalUrl = allImageUrls[0] || null;
-                  
+
                   // Debug logging
                   if (finalUrl) {
                     console.log(`🖼️ Property "${property.title}" - Trying image URL:`, finalUrl);
                     if (allImageUrls.length > 1) {
                       console.log(`   ${allImageUrls.length - 1} fallback URL(s) available`);
                     }
+                    // Log if URLs were cleaned
+                    if (property.images && property.images.length > 0) {
+                      const originalFirst = property.images[0];
+                      if (typeof originalFirst === 'string' && originalFirst.includes('?')) {
+                        console.log(`🧹 Cleaned URL from: "${originalFirst.substring(0, 100)}..." -> "${finalUrl.substring(0, 100)}..."`);
+                      }
+                    }
                   } else {
                     console.warn(`⚠️ Property "${property.title}" - No image URLs found. Images:`, property.images);
                   }
-                  
+
                   if (finalUrl) {
                     // Create a unique key for this image to track retries
                     const imageKey = `img-${property.id}-${finalUrl.substring(0, 50).replace(/[^a-zA-Z0-9]/g, '-')}`;
-                    
+
                     return (
-                      <img 
+                      <img
                         key={imageKey}
                         src={finalUrl}
                         alt={property.title}
@@ -377,9 +420,9 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
                           const currentSrc = img.src;
                           const fallbackUrls = JSON.parse(img.getAttribute('data-fallback-urls') || '[]');
                           let triedIndex = parseInt(img.getAttribute('data-tried-index') || '0');
-                          
+
                           console.warn(`❌ Failed to load image for "${property.title}":`, currentSrc);
-                          
+
                           // Try next URL in the list if available
                           if (triedIndex < fallbackUrls.length) {
                             const nextUrl = fallbackUrls[triedIndex];
@@ -389,7 +432,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
                             img.src = nextUrl;
                             return; // Try next URL
                           }
-                          
+
                           // All URLs failed - show placeholder and prevent further errors
                           img.onerror = null; // Remove error handler to prevent loop
                           console.error(`❌ All image URLs failed for "${property.title}". Tried ${triedIndex + 1} URL(s)`);
@@ -411,7 +454,7 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
                 {property.featured && <span className="featured-badge">Featured</span>}
                 {!property.available && <span className="unavailable-badge">Unavailable</span>}
               </div>
-              
+
               <div className="property-info">
                 <h3>{property.title || 'Untitled Property'}</h3>
                 <div className="property-details">
@@ -427,13 +470,13 @@ function PropertyList({ apiBaseUrl, token, onEdit, onAdd }) {
               </div>
 
               <div className="property-actions">
-                <button 
+                <button
                   className="edit-btn"
                   onClick={() => onEdit(property)}
                 >
                   Edit
                 </button>
-                <button 
+                <button
                   className="delete-btn"
                   onClick={() => handleDelete(property.id)}
                 >

@@ -58,7 +58,6 @@ function Login({ onLogin, apiBaseUrl }) {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        <p className="login-hint">Default password: admin123</p>
       </div>
     </div>
   );
