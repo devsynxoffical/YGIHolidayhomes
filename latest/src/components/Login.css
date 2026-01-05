@@ -20,6 +20,17 @@
   pointer-events: none;
 }
 
+.login-logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.login-logo {
+  max-width: 120px;
+  height: auto;
+}
+
 .login-box {
   background: white;
   padding: 40px;
@@ -114,4 +125,3 @@
   color: #999;
   font-size: 12px;
 }
-

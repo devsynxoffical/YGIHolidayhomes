@@ -1,20 +1,41 @@
 import React, { useState, useEffect } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import { properties as localProperties } from '../../data/properties';
+import { useProperties } from '../../contexts/PropertiesContext';
 import './PropertyDetails.css';
 
 const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
+  const { getBookedDates } = useProperties();
   const [activeImage, setActiveImage] = useState(0);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [bookedDates, setBookedDates] = useState([]);
   const [bookingData, setBookingData] = useState({
-    checkIn: '',
-    checkOut: '',
+    checkIn: null,
+    checkOut: null,
     guests: 1,
     name: '',
     email: '',
     phone: ''
   });
+
+  // Fetch booked dates on mount
+  useEffect(() => {
+    if (property?.id && getBookedDates) {
+      const fetchDates = async () => {
+        const dates = await getBookedDates(property.id);
+        // Convert string dates to Date objects
+        const formattedDates = dates.map(range => ({
+          start: new Date(range.checkIn),
+          end: new Date(range.checkOut)
+        }));
+        setBookedDates(formattedDates);
+      };
+      fetchDates();
+    }
+  }, [property?.id, getBookedDates]);
 
   // Calculate discount and totals (for display only - discount will be applied in booking page)
   const calculateTotal = () => {
@@ -53,8 +74,8 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
       excludeCleaningFee: property?.excludeCleaningFee || false, // Explicitly preserve flag
       excludeDiscount: property?.excludeDiscount || false, // Explicitly preserve flag
       bookingData: {
-        checkIn: bookingData.checkIn,
-        checkOut: bookingData.checkOut,
+        checkIn: bookingData.checkIn.toISOString().split('T')[0],
+        checkOut: bookingData.checkOut.toISOString().split('T')[0],
         guests: bookingData.guests,
         // Optional fields that Payment.jsx handles defaults for
         name: bookingData.name,
@@ -334,7 +355,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                       AED {property.price}
                     </span>
                     <span className="amount discounted-price" style={{ color: '#e51d53' }}>
-                      AED {(property.price * 0.7).toFixed(0)}
+                      AED {(property.price * (1 - (property.discountPercentage !== undefined ? property.discountPercentage : 30) / 100)).toFixed(0)}
                     </span>
                   </>
                 ) : (
@@ -351,18 +372,30 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               <div className="date-picker-row">
                 <div className="date-input-group">
                   <label>CHECK-IN</label>
-                  <input
-                    type="date"
-                    value={bookingData.checkIn}
-                    onChange={(e) => setBookingData({ ...bookingData, checkIn: e.target.value })}
+                  <DatePicker
+                    selected={bookingData.checkIn}
+                    onChange={(date) => setBookingData({ ...bookingData, checkIn: date })}
+                    selectsStart
+                    startDate={bookingData.checkIn}
+                    endDate={bookingData.checkOut}
+                    minDate={new Date()}
+                    excludeDateIntervals={bookedDates}
+                    placeholderText="Select date"
+                    className="booking-datepicker"
                   />
                 </div>
                 <div className="date-input-group">
                   <label>CHECKOUT</label>
-                  <input
-                    type="date"
-                    value={bookingData.checkOut}
-                    onChange={(e) => setBookingData({ ...bookingData, checkOut: e.target.value })}
+                  <DatePicker
+                    selected={bookingData.checkOut}
+                    onChange={(date) => setBookingData({ ...bookingData, checkOut: date })}
+                    selectsEnd
+                    startDate={bookingData.checkIn}
+                    endDate={bookingData.checkOut}
+                    minDate={bookingData.checkIn || new Date()}
+                    excludeDateIntervals={bookedDates}
+                    placeholderText="Select date"
+                    className="booking-datepicker"
                   />
                 </div>
               </div>
@@ -415,7 +448,8 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               const cleaningFee = property.excludeCleaningFee ? 0 : 400;
               const taxes = basePrice * 0.08;
               const subtotal = basePrice + cleaningFee + taxes;
-              const discount = property.excludeDiscount ? 0 : subtotal * 0.30;
+              const discountRate = property.discountPercentage !== undefined ? property.discountPercentage : 30;
+              const discount = property.excludeDiscount ? 0 : subtotal * (discountRate / 100);
               const total = subtotal - discount;
 
               return (
@@ -447,7 +481,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                         <span>AED {subtotal.toFixed(0)}</span>
                       </div>
                       <div className="calc-row discount">
-                        <span>🎉 Special Offer (30% OFF)</span>
+                        <span>🎉 Special Offer ({discountRate}% OFF)</span>
                         <span>-AED {discount.toFixed(0)}</span>
                       </div>
                     </>

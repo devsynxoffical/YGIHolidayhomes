@@ -132,7 +132,7 @@ const PaymentForm = ({ bookingDetails, onPaymentSuccess, onPaymentError, booking
             };
 
             console.log('📤 Submitting booking to Google Sheets:', sheetsData);
-            
+
             // Submit to Google Sheets with error handling
             let sheetsResult = { success: false, message: 'Not attempted' };
             try {
@@ -266,8 +266,9 @@ const Payment = ({ onNavigate, bookingData }) => {
         const cleaningFee = bookingData.excludeCleaningFee ? 0 : pricing.cleaningFee;
         // Calculate subtotal
         const subtotal = pricing.basePrice + cleaningFee + pricing.taxes;
-        // Use automaticDiscount from pricing breakdown (30% discount)
+        // Use automaticDiscount from pricing breakdown (dynamic discount)
         const automaticDiscount = pricing.automaticDiscount || 0;
+        const discountPercentage = pricing.discountPercentage || bookingData.discountPercentage || 30;
         // Calculate total: subtotal - automatic discount - coupon discount
         const totalAmount = subtotal - automaticDiscount - (pricing.discountAmount || 0);
         return {
@@ -282,6 +283,7 @@ const Payment = ({ onNavigate, bookingData }) => {
           cleaningFee: cleaningFee,
           subtotal: subtotal,
           automaticDiscount: automaticDiscount,
+          discountPercentage: discountPercentage,
           discountAmount: pricing.discountAmount || 0,
           totalAmount: totalAmount,
           coupon: bookingData.coupon,
@@ -297,8 +299,9 @@ const Payment = ({ onNavigate, bookingData }) => {
       const taxes = basePrice * 0.08;
       const cleaningFee = bookingData.excludeCleaningFee ? 0 : 400;
       const subtotal = basePrice + taxes + cleaningFee;
-      // Apply 30% discount if property doesn't exclude it (same logic as BookApartment)
-      const automaticDiscount = bookingData.excludeDiscount ? 0 : subtotal * 0.30;
+      // Apply dynamic discount if property doesn't exclude it
+      const discountPercentage = bookingData.discountPercentage !== undefined ? bookingData.discountPercentage : 30;
+      const automaticDiscount = bookingData.excludeDiscount ? 0 : subtotal * (discountPercentage / 100);
       const totalAmount = subtotal - automaticDiscount;
 
       return {
@@ -313,6 +316,7 @@ const Payment = ({ onNavigate, bookingData }) => {
         cleaningFee: cleaningFee,
         subtotal: subtotal,
         automaticDiscount: automaticDiscount,
+        discountPercentage: discountPercentage,
         totalAmount: totalAmount,
         discountAmount: 0,
         coupon: null,
@@ -425,7 +429,7 @@ const Payment = ({ onNavigate, bookingData }) => {
                   </div>
                   <div className="price-row discount-row automatic-discount">
                     <span className="discount-label">
-                      🎉 Special Offer (30% OFF)
+                      🎉 Special Offer ({bookingDetails.discountPercentage}% OFF)
                     </span>
                     <span className="discount-amount">
                       -AED {Math.round(bookingDetails.automaticDiscount)}
@@ -453,7 +457,7 @@ const Payment = ({ onNavigate, bookingData }) => {
 
               {bookingDetails.automaticDiscount > 0 && (
                 <div className="savings-badge automatic-savings">
-                  💰 You saved AED {Math.round(bookingDetails.automaticDiscount)} with our special 30% offer!
+                  💰 You saved AED {Math.round(bookingDetails.automaticDiscount)} with our special {bookingDetails.discountPercentage}% offer!
                 </div>
               )}
 

@@ -75,8 +75,20 @@ export const PropertiesProvider = ({ children }) => {
     return () => clearInterval(refreshInterval);
   }, []);
 
+  const getBookedDates = async (propertyId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/properties/${propertyId}/booked-dates`);
+      if (!response.ok) throw new Error('Failed to fetch booked dates');
+      const data = await response.json();
+      return data.success ? data.bookedDates : [];
+    } catch (err) {
+      console.error(`Error fetching booked dates for property ${propertyId}:`, err);
+      return [];
+    }
+  };
+
   return (
-    <PropertiesContext.Provider value={{ properties, loading, error }}>
+    <PropertiesContext.Provider value={{ properties, loading, error, getBookedDates }}>
       {children}
     </PropertiesContext.Provider>
   );

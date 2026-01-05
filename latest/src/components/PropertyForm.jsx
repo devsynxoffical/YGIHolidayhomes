@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNotification } from './common/NotificationContext';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import { format, isAfter, isBefore, startOfDay } from 'date-fns';
 import './PropertyForm.css';
 
 function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
@@ -36,7 +39,15 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     guestAccess: '',
     otherNotes: '',
     excludeDiscount: false,
-    excludeCleaningFee: false
+    excludeCleaningFee: false,
+    discountPercentage: 0
+  });
+
+  const [blockedDates, setBlockedDates] = useState([]);
+  const [newBlockedRange, setNewBlockedRange] = useState({
+    startDate: null,
+    endDate: null,
+    note: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -175,8 +186,32 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         guestAccess: property.guestAccess || '',
         otherNotes: property.otherNotes || '',
         excludeDiscount: property.excludeDiscount || false,
-        excludeCleaningFee: property.excludeCleaningFee || false
+        excludeCleaningFee: property.excludeCleaningFee || false,
+        discountPercentage: property.discountPercentage || 0
       });
+
+      // Fetch blocked dates
+      const fetchBlockedDates = async () => {
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/properties/${property.id}/booked-dates`);
+          const data = await response.json();
+          if (data.success) {
+            // Filter only manual blocks for editing
+            const manualBlocks = data.bookedDates
+              .filter(d => d.type === 'manual')
+              .map(d => ({
+                id: Math.random().toString(36).substr(2, 9),
+                startDate: new Date(d.checkIn),
+                endDate: new Date(d.checkOut),
+                note: d.note || ''
+              }));
+            setBlockedDates(manualBlocks);
+          }
+        } catch (err) {
+          console.error('Error fetching blocked dates:', err);
+        }
+      };
+      fetchBlockedDates();
     } else {
       // Reset form when no property is selected
       setFormData({
@@ -207,7 +242,8 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         guestAccess: '',
         otherNotes: '',
         excludeDiscount: false,
-        excludeCleaningFee: false
+        excludeCleaningFee: false,
+        discountPercentage: 0
       });
     }
   }, [property, apiBaseUrl]);
@@ -329,6 +365,32 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     }));
   };
 
+  const addBlockedRange = () => {
+    if (!newBlockedRange.startDate || !newBlockedRange.endDate) {
+      showNotification('Please select both start and end dates', 'error');
+      return;
+    }
+    if (isAfter(newBlockedRange.startDate, newBlockedRange.endDate)) {
+      showNotification('Start date must be before end date', 'error');
+      return;
+    }
+
+    setBlockedDates(prev => [...prev, {
+      ...newBlockedRange,
+      id: Math.random().toString(36).substr(2, 9)
+    }]);
+
+    setNewBlockedRange({
+      startDate: null,
+      endDate: null,
+      note: ''
+    });
+  };
+
+  const removeBlockedRange = (id) => {
+    setBlockedDates(prev => prev.filter(range => range.id !== id));
+  };
+
 
 
   const handleSubmit = async (e) => {
@@ -384,6 +446,28 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to save property');
+      }
+
+      // Save blocked dates if property exists (or use the new ID from data.property.id)
+      const finalId = property ? property.id : data.property.id;
+
+      const blockedResponse = await fetch(`${apiBaseUrl}/api/admin/properties/${finalId}/blocked-dates`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          blockedDates: blockedDates.map(d => ({
+            checkIn: format(d.startDate, 'yyyy-MM-dd'),
+            checkOut: format(d.endDate, 'yyyy-MM-dd'),
+            note: d.note
+          }))
+        })
+      });
+
+      if (!blockedResponse.ok) {
+        console.warn('⚠️ Property saved but failed to update blocked dates');
       }
 
       // Show success message
@@ -604,6 +688,19 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 />
                 Featured
               </label>
+            </div>
+
+            <div className="form-group">
+              <label>Discount Percentage (%)</label>
+              <input
+                type="number"
+                name="discountPercentage"
+                value={formData.discountPercentage}
+                onChange={handleChange}
+                min="0"
+                max="100"
+                step="1"
+              />
             </div>
 
             <div className="form-group checkbox-group">
@@ -828,6 +925,85 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                 </button>
               </span>
             ))}
+          </div>
+        </section>
+
+        {/* Blocked Dates Management */}
+        <section className="form-section">
+          <h2>Blocked Dates Management</h2>
+          <p className="section-hint">Select date ranges to manually block this property from being booked (e.g., for maintenance or private use).</p>
+
+          <div className="blocked-dates-manager">
+            <div className="add-blocked-range">
+              <div className="range-inputs">
+                <div className="date-picker-group">
+                  <label>Start Date</label>
+                  <DatePicker
+                    selected={newBlockedRange.startDate}
+                    onChange={(date) => setNewBlockedRange(prev => ({ ...prev, startDate: date }))}
+                    selectsStart
+                    startDate={newBlockedRange.startDate}
+                    endDate={newBlockedRange.endDate}
+                    minDate={startOfDay(new Date())}
+                    placeholderText="Select start date"
+                    className="admin-datepicker"
+                  />
+                </div>
+                <div className="date-picker-group">
+                  <label>End Date</label>
+                  <DatePicker
+                    selected={newBlockedRange.endDate}
+                    onChange={(date) => setNewBlockedRange(prev => ({ ...prev, endDate: date }))}
+                    selectsEnd
+                    startDate={newBlockedRange.startDate}
+                    endDate={newBlockedRange.endDate}
+                    minDate={newBlockedRange.startDate || startOfDay(new Date())}
+                    placeholderText="Select end date"
+                    className="admin-datepicker"
+                  />
+                </div>
+                <div className="note-group">
+                  <label>Note (Optional)</label>
+                  <input
+                    type="text"
+                    value={newBlockedRange.note}
+                    onChange={(e) => setNewBlockedRange(prev => ({ ...prev, note: e.target.value }))}
+                    placeholder="e.g., Owner use, Maintenance"
+                  />
+                </div>
+                <button type="button" className="add-range-btn" onClick={addBlockedRange}>
+                  Block Dates
+                </button>
+              </div>
+            </div>
+
+            <div className="blocked-ranges-list">
+              <h3>Currently Blocked Ranges</h3>
+              {blockedDates.length === 0 ? (
+                <p className="no-ranges">No manually blocked dates for this property.</p>
+              ) : (
+                <div className="ranges-grid">
+                  {blockedDates.map(range => (
+                    <div key={range.id} className="range-card">
+                      <div className="range-info">
+                        <span className="range-dates">
+                          {format(range.startDate, 'MMM dd, yyyy')} - {format(range.endDate, 'MMM dd, yyyy')}
+                        </span>
+                        {range.note && <span className="range-note">{range.note}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        className="remove-range-btn"
+                        onClick={() => removeBlockedRange(range.id)}
+                        title="Remove block"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

@@ -44,6 +44,9 @@ const upload = multer({
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const BOOKINGS_FILE = path.join(__dirname, 'data', 'bookings.json');
+const BLOCKED_DATES_FILE = path.join(__dirname, 'data', 'blocked_dates.json');
+const PROPERTIES_FILE = path.join(__dirname, 'data', 'properties.json');
 
 // Middleware
 // Middleware
@@ -769,6 +772,60 @@ app.get('/api/properties', async (req, res) => {
   }
 });
 
+// Get booked dates for a property (public endpoint)
+app.get('/api/properties/:id/booked-dates', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Read bookings from file
+    let bookings = [];
+    try {
+      const bookingsData = await fs.readFile(BOOKINGS_FILE, 'utf8').catch(() => '[]');
+      bookings = JSON.parse(bookingsData);
+    } catch (error) {
+      bookings = [];
+    }
+
+    // Filter bookings for this property that are confirmed/paid
+    const propertyBookings = bookings.filter(b =>
+      String(b.propertyId) === String(id) &&
+      (b.status === 'confirmed' || b.paymentStatus === 'paid')
+    );
+
+    // Map to simple date ranges
+    const bookedDates = propertyBookings.map(b => ({
+      checkIn: b.checkIn,
+      checkOut: b.checkOut,
+      type: 'booking'
+    }));
+
+    // Read manual blocked dates
+    let blockedDatesStore = {};
+    try {
+      if (await fs.access(BLOCKED_DATES_FILE).then(() => true).catch(() => false)) {
+        const bdData = await fs.readFile(BLOCKED_DATES_FILE, 'utf8');
+        blockedDatesStore = JSON.parse(bdData);
+      }
+    } catch (error) {
+      console.warn('Could not read blocked dates file:', error.message);
+    }
+
+    const manualBlockedDates = (blockedDatesStore[id] || []).map(range => ({
+      ...range,
+      type: 'manual'
+    }));
+
+    res.json({
+      success: true,
+      propertyId: id,
+      bookedDates: [...bookedDates, ...manualBlockedDates]
+    });
+  } catch (error) {
+    console.error('Error fetching booked dates:', error);
+    res.status(500).json({ error: 'Failed to fetch booked dates' });
+  }
+});
+
 // Admin booking statistics endpoint
 app.get('/api/admin/statistics', authenticateAdmin, async (req, res) => {
   try {
@@ -1427,6 +1484,41 @@ app.put('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error updating property:', error);
     res.status(500).json({ error: 'Failed to update property' });
+  }
+});
+
+// Update manual blocked dates (admin endpoint)
+app.put('/api/admin/properties/:id/blocked-dates', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { blockedDates } = req.body; // Array of { checkIn, checkOut, note }
+
+    if (!Array.isArray(blockedDates)) {
+      return res.status(400).json({ error: 'blockedDates must be an array' });
+    }
+
+    // Read existing store
+    let blockedDatesStore = {};
+    try {
+      if (await fs.access(BLOCKED_DATES_FILE).then(() => true).catch(() => false)) {
+        const bdData = await fs.readFile(BLOCKED_DATES_FILE, 'utf8');
+        blockedDatesStore = JSON.parse(bdData);
+      }
+    } catch (error) {
+      blockedDatesStore = {};
+    }
+
+    // Update for this property
+    blockedDatesStore[id] = blockedDates;
+
+    // Save back
+    await fs.writeFile(BLOCKED_DATES_FILE, JSON.stringify(blockedDatesStore, null, 2));
+
+    console.log('✅ Blocked dates updated for property:', id);
+    res.json({ success: true, propertyId: id, blockedDates });
+  } catch (error) {
+    console.error('Error updating blocked dates:', error);
+    res.status(500).json({ error: 'Failed to update blocked dates' });
   }
 });
 

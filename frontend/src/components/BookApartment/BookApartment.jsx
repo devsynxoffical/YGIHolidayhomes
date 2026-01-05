@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import { useProperties } from '../../contexts/PropertiesContext';
 import { getImageUrlWithFallback } from '../../utils/imageUtils';
@@ -408,20 +410,28 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
               </div>
               <div className="calc-field">
                 <label>Check-in</label>
-                <input
-                  type="date"
-                  value={calculatorForm.checkIn}
-                  onChange={(e) => handleCalculatorInputChange('checkIn', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                <DatePicker
+                  selected={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
+                  onChange={(date) => handleCalculatorInputChange('checkIn', date ? date.toISOString().split('T')[0] : '')}
+                  selectsStart
+                  startDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
+                  endDate={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
+                  minDate={new Date()}
+                  placeholderText="Select date"
+                  className="calc-datepicker"
                 />
               </div>
               <div className="calc-field">
                 <label>Check-out</label>
-                <input
-                  type="date"
-                  value={calculatorForm.checkOut}
-                  onChange={(e) => handleCalculatorInputChange('checkOut', e.target.value)}
-                  min={calculatorForm.checkIn || new Date().toISOString().split('T')[0]}
+                <DatePicker
+                  selected={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
+                  onChange={(date) => handleCalculatorInputChange('checkOut', date ? date.toISOString().split('T')[0] : '')}
+                  selectsEnd
+                  startDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
+                  endDate={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
+                  minDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : new Date()}
+                  placeholderText="Select date"
+                  className="calc-datepicker"
                 />
               </div>
               <div className="calc-field">
@@ -648,7 +658,7 @@ const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
   // Get all image URLs with fallbacks
   const getImageUrls = () => {
     if (!property.images || property.images.length === 0) return [];
-    
+
     const urls = [];
     property.images.forEach(img => {
       // Handle both string URLs and object format {url: "...", category: "..."}
@@ -673,7 +683,7 @@ const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
   const imageUrls = getImageUrls();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
-  
+
   // Use refs to track image loading state and prevent infinite loops
   const imageIndexRef = useRef(0);
   const isHandlingErrorRef = useRef(false);
@@ -692,12 +702,12 @@ const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
     if (isHandlingErrorRef.current) {
       return;
     }
-    
+
     isHandlingErrorRef.current = true;
     const img = e.target;
     const currentIndex = imageIndexRef.current;
     const nextIndex = currentIndex + 1;
-    
+
     // Try next image in the array if available
     if (nextIndex < imageUrls.length) {
       let nextUrl = imageUrls[nextIndex];
@@ -706,21 +716,21 @@ const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
         nextUrl = nextUrl.split('?')[0];
       }
       console.log(`🔄 Trying next image (${nextIndex + 1}/${imageUrls.length}) for "${property.title}":`, nextUrl);
-      
+
       // Update ref and state
       imageIndexRef.current = nextIndex;
       setCurrentImageIndex(nextIndex);
-      
+
       // Update src immediately to try next image (ensure it's clean)
       img.src = nextUrl;
-      
+
       // Reset error handler flag after a short delay to allow the new image to load
       setTimeout(() => {
         isHandlingErrorRef.current = false;
       }, 100);
       return;
     }
-    
+
     // All images failed - show placeholder
     console.warn(`❌ All images failed to load for "${property.title}". Tried ${currentIndex + 1} image(s)`);
     setImageError(true);
@@ -731,10 +741,10 @@ const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
   };
 
   // Ensure the current image URL is clean (no query parameters)
-  const currentImageUrl = imageUrls.length > 0 && !imageError 
-    ? (imageUrls[currentImageIndex]?.includes('?') 
-        ? imageUrls[currentImageIndex].split('?')[0] 
-        : imageUrls[currentImageIndex])
+  const currentImageUrl = imageUrls.length > 0 && !imageError
+    ? (imageUrls[currentImageIndex]?.includes('?')
+      ? imageUrls[currentImageIndex].split('?')[0]
+      : imageUrls[currentImageIndex])
     : '';
 
   return (
@@ -819,14 +829,31 @@ const PropertyCard = ({ property, onBookNow, onViewDetails }) => {
 
 // Booking Modal Component
 const BookingModal = ({ property, onClose, onSubmit }) => {
+  const { getBookedDates } = useProperties();
+  const [bookedDates, setBookedDates] = useState([]);
   const [bookingData, setBookingData] = useState({
     name: '',
     email: '',
     phone: '',
-    checkIn: '',
-    checkOut: '',
+    checkIn: null,
+    checkOut: null,
     guests: 1
   });
+
+  // Fetch booked dates on mount
+  useEffect(() => {
+    if (property?.id && getBookedDates) {
+      const fetchDates = async () => {
+        const dates = await getBookedDates(property.id);
+        const formattedDates = dates.map(range => ({
+          start: new Date(range.checkIn),
+          end: new Date(range.checkOut)
+        }));
+        setBookedDates(formattedDates);
+      };
+      fetchDates();
+    }
+  }, [property?.id, getBookedDates]);
 
 
   const handleSubmit = (e) => {
@@ -875,6 +902,8 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
 
     onSubmit({
       ...bookingData,
+      checkIn: bookingData.checkIn.toISOString().split('T')[0],
+      checkOut: bookingData.checkOut.toISOString().split('T')[0],
       propertyId: property.id,
       totalPrice: pricing.finalTotal,
       pricingBreakdown: pricing
@@ -912,8 +941,9 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
     const taxes = basePrice * 0.08;
     const subtotal = basePrice + cleaningFee + taxes;
 
-    // Apply automatic 30% discount (skip if property excludes discount)
-    const automaticDiscount = property.excludeDiscount ? 0 : subtotal * 0.30;
+    // Apply automatic dynamic discount (skip if property excludes discount)
+    const discountRate = property.discountPercentage !== undefined ? property.discountPercentage : 30;
+    const automaticDiscount = property.excludeDiscount ? 0 : subtotal * (discountRate / 100);
     const finalTotal = subtotal - automaticDiscount;
 
     return {
@@ -925,7 +955,7 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
       automaticDiscount,
       discountAmount: 0,
       finalTotal,
-      discountPercentage: 0
+      discountPercentage: discountRate
     };
   };
 
@@ -941,19 +971,29 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
           <div className="booking-dates">
             <div className="date-field">
               <label>Check-in</label>
-              <input
-                type="date"
-                value={bookingData.checkIn}
-                onChange={(e) => setBookingData(prev => ({ ...prev, checkIn: e.target.value }))}
+              <DatePicker
+                selected={bookingData.checkIn}
+                onChange={(date) => setBookingData(prev => ({ ...prev, checkIn: date }))}
+                selectsStart
+                startDate={bookingData.checkIn}
+                endDate={bookingData.checkOut}
+                minDate={new Date()}
+                excludeDateIntervals={bookedDates}
+                placeholderText="Select date"
                 required
               />
             </div>
             <div className="date-field">
               <label>Check-out</label>
-              <input
-                type="date"
-                value={bookingData.checkOut}
-                onChange={(e) => setBookingData(prev => ({ ...prev, checkOut: e.target.value }))}
+              <DatePicker
+                selected={bookingData.checkOut}
+                onChange={(date) => setBookingData(prev => ({ ...prev, checkOut: date }))}
+                selectsEnd
+                startDate={bookingData.checkIn}
+                endDate={bookingData.checkOut}
+                minDate={bookingData.checkIn || new Date()}
+                excludeDateIntervals={bookedDates}
+                placeholderText="Select date"
                 required
               />
             </div>
@@ -1101,7 +1141,7 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
                   {!property.excludeDiscount && pricing.automaticDiscount > 0 && (
                     <div className="summary-line discount automatic-discount">
                       <span className="discount-label">
-                        🎉 Special Offer (30% OFF)
+                        🎉 Special Offer ({pricing.discountPercentage}% OFF)
                       </span>
                       <span className="discount-amount">
                         -<PriceDisplay price={pricing.automaticDiscount} size="small" />
@@ -1116,7 +1156,7 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
 
                   {!property.excludeDiscount && pricing.automaticDiscount > 0 && (
                     <div className="savings-badge automatic-savings">
-                      💰 You saved <PriceDisplay price={pricing.automaticDiscount} size="small" /> with our special offer!
+                      💰 You saved <PriceDisplay price={pricing.automaticDiscount} size="small" /> with our special {pricing.discountPercentage}% offer!
                     </div>
                   )}
                 </>

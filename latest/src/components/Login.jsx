@@ -38,6 +38,16 @@ function Login({ onLogin, apiBaseUrl }) {
   return (
     <div className="login-container">
       <div className="login-box">
+        <div className="login-logo-container">
+          <img
+            src="https://www.ygiholidayhomes.com/Images/logoFinal.png"
+            alt="YGI Holiday Homes"
+            className="login-logo"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
         <h1>YGI Holiday Homes</h1>
         <h2>Admin Panel</h2>
         <form onSubmit={handleSubmit}>

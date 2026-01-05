@@ -478,12 +478,46 @@
   margin-bottom: 4px;
 }
 
-.date-input-group input {
+.date-input-group input,
+.booking-datepicker {
   width: 100%;
   border: none;
   outline: none;
   font-size: 14px;
   color: #444;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker {
+  font-family: 'Outfit', sans-serif !important;
+  border-radius: 12px !important;
+  border: 1px solid #ddd !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-datepicker__header {
+  background-color: #fff !important;
+  border-bottom: 1px solid #eee !important;
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: #e51d53 !important;
+  color: white !important;
+}
+
+.react-datepicker__day--disabled {
+  color: #ccc !important;
+  text-decoration: line-through !important;
 }
 
 .contact-input-group {
