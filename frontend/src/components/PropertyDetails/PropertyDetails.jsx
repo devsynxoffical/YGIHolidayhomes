@@ -354,13 +354,13 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
           <div className="booking-widget-card">
             <div className="widget-header">
               <div className="price-display">
-                {property.id !== 4 ? (
+                {!property.excludeDiscount && property.discountPercentage > 0 ? (
                   <>
                     <span className="amount original-price" style={{ textDecoration: 'line-through', fontSize: '16px', color: '#888', marginRight: '8px' }}>
                       AED {property.price}
                     </span>
                     <span className="amount discounted-price" style={{ color: '#e51d53' }}>
-                      AED {(property.price * (1 - (property.discountPercentage !== undefined ? property.discountPercentage : 30) / 100)).toFixed(0)}
+                      AED {(property.price * (1 - property.discountPercentage / 100)).toFixed(0)}
                     </span>
                   </>
                 ) : (
@@ -452,8 +452,8 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               const cleaningFee = property.excludeCleaningFee ? 0 : 400;
               const taxes = basePrice * 0.08;
               const subtotal = basePrice + cleaningFee + taxes;
-              const discountRate = property.discountPercentage !== undefined ? property.discountPercentage : 30;
-              const discount = property.excludeDiscount ? 0 : subtotal * (discountRate / 100);
+              const discountRate = (property.discountPercentage !== undefined && property.discountPercentage !== null) ? Number(property.discountPercentage) : 0;
+              const discount = (property.excludeDiscount || discountRate <= 0) ? 0 : subtotal * (discountRate / 100);
               const total = subtotal - discount;
 
               return (

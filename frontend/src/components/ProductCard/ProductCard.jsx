@@ -31,8 +31,8 @@ const ProductCard = ({ product, onNavigate }) => {
   return (
     <div className="product-card clickable" onClick={handleCardClick}>
       <div className="product-image-container">
-        <img 
-          src={getImageUrlWithFallback(product.image || (product.images && product.images[0]))} 
+        <img
+          src={getImageUrlWithFallback(product.image || (product.images && product.images[0]))}
           alt={product.name}
           className="product-image"
           crossOrigin="anonymous"
@@ -42,28 +42,28 @@ const ProductCard = ({ product, onNavigate }) => {
             e.target.style.objectFit = 'contain';
           }}
         />
-        
+
         {/* Featured Badge */}
         {product.featured && <span className="badge featured">Featured</span>}
-        
+
         {/* Rating Badge */}
         <div className="rating-badge">
           <span className="star">★</span>
           <span>{product.rating}</span>
         </div>
-        
+
         {/* Wishlist Button */}
-        <button 
+        <button
           className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
           onClick={handleWishlistToggle}
           aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </button>
       </div>
-      
+
       <div className="product-info">
         <h3 className="product-name">{product.title || product.name}</h3>
         <div className="product-location-area">
@@ -132,12 +132,26 @@ const ProductCard = ({ product, onNavigate }) => {
           <p className="product-posted">{product.posted}</p>
         </div>
         <div className="product-price">
-          <PriceDisplay 
-            price={product.price} 
-            showPeriod={true} 
-            period="/ Per Night"
-            size="medium"
-          />
+          {!product.excludeDiscount && product.discountPercentage > 0 ? (
+            <div className="price-stack" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="original-price-strike" style={{ textDecoration: 'line-through', fontSize: '0.85em', color: '#888' }}>
+                AED {product.price}
+              </span>
+              <PriceDisplay
+                price={product.price * (1 - product.discountPercentage / 100)}
+                showPeriod={true}
+                period="/ Per Night"
+                size="medium"
+              />
+            </div>
+          ) : (
+            <PriceDisplay
+              price={product.price}
+              showPeriod={true}
+              period="/ Per Night"
+              size="medium"
+            />
+          )}
         </div>
       </div>
     </div>

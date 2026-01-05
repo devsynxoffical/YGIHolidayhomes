@@ -25,9 +25,10 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
   const [activeBookedDates, setActiveBookedDates] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
 
-  // Initial load - always load all properties first
+  // Initial load - always load all properties first (only available ones)
   useEffect(() => {
-    setProperties(allProperties);
+    const availableProperties = allProperties?.filter(p => p.available !== false) || [];
+    setProperties(availableProperties);
     setLoading(false);
   }, [allProperties]);
 
@@ -36,15 +37,16 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
     if (searchParams && Object.keys(searchParams).length > 0) {
       applySearchFilters(searchParams);
     } else {
-      // Reset to all properties if no search params
-      setProperties(allProperties);
+      // Reset to all available properties if no search params
+      const availableProperties = allProperties?.filter(p => p.available !== false) || [];
+      setProperties(availableProperties);
       setSearchResults(null);
     }
   }, [searchParams, allProperties]);
 
   // Apply search filters from SearchFilter component
   const applySearchFilters = (filters) => {
-    let filteredProperties = [...allProperties];
+    let filteredProperties = allProperties.filter(property => property.available !== false);
 
     // Filter by property type
     if (filters.propertyType && filters.propertyType !== 'All Types') {
@@ -973,8 +975,8 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
     const subtotal = basePrice + cleaningFee + taxes;
 
     // Apply automatic dynamic discount (skip if property excludes discount)
-    const discountRate = property.discountPercentage !== undefined ? property.discountPercentage : 30;
-    const automaticDiscount = property.excludeDiscount ? 0 : subtotal * (discountRate / 100);
+    const discountRate = (property.discountPercentage !== undefined && property.discountPercentage !== null) ? Number(property.discountPercentage) : 0;
+    const automaticDiscount = (property.excludeDiscount || discountRate <= 0) ? 0 : subtotal * (discountRate / 100);
     const finalTotal = subtotal - automaticDiscount;
 
     return {
