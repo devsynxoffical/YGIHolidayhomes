@@ -26,11 +26,15 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     if (property?.id && getBookedDates) {
       const fetchDates = async () => {
         const dates = await getBookedDates(property.id);
-        // Convert string dates to Date objects
-        const formattedDates = dates.map(range => ({
-          start: new Date(range.checkIn),
-          end: new Date(range.checkOut)
-        }));
+        // Parse dates as local midnight to avoid timezone shifts
+        const formattedDates = dates.map(range => {
+          const [sYear, sMonth, sDay] = range.checkIn.split('-').map(Number);
+          const [eYear, eMonth, eDay] = range.checkOut.split('-').map(Number);
+          return {
+            start: new Date(sYear, sMonth - 1, sDay),
+            end: new Date(eYear, eMonth - 1, eDay)
+          };
+        });
         setBookedDates(formattedDates);
       };
       fetchDates();

@@ -7,8 +7,8 @@ import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import './BookApartment.css';
 
 const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) => {
-  const { properties: allProperties } = useProperties();
-  const [properties, setProperties] = useState([]);
+  const { properties: allProperties, getBookedDates } = useProperties();
+  const [properties, setProperties] = useState([]); // This state holds the currently displayed (filtered) properties
   const [loading, setLoading] = useState(true);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -21,14 +21,13 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
     checkOut: '',
     guests: 1
   });
+  const [activeBookedDates, setActiveBookedDates] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
 
   // Initial load - always load all properties first
   useEffect(() => {
-    if (allProperties && allProperties.length > 0) {
-      setProperties(allProperties);
-      setLoading(false);
-    }
+    setProperties(allProperties);
+    setLoading(false);
   }, [allProperties]);
 
   // Handle search parameters when they change
@@ -167,6 +166,31 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
   };
 
   // Calculator form handlers
+  // Fetch booked dates for calculator if a specific property matches the destination
+  useEffect(() => {
+    const matchedProperty = properties.find(p =>
+      p.title.toLowerCase().includes(calculatorForm.destination.toLowerCase())
+    );
+
+    if (matchedProperty && getBookedDates) {
+      const fetchDates = async () => {
+        const dates = await getBookedDates(matchedProperty.id);
+        const formattedDates = dates.map(range => {
+          const [sYear, sMonth, sDay] = range.checkIn.split('-').map(Number);
+          const [eYear, eMonth, eDay] = range.checkOut.split('-').map(Number);
+          return {
+            start: new Date(sYear, sMonth - 1, sDay),
+            end: new Date(eYear, eMonth - 1, eDay)
+          };
+        });
+        setActiveBookedDates(formattedDates);
+      };
+      fetchDates();
+    } else {
+      setActiveBookedDates([]);
+    }
+  }, [calculatorForm.destination, properties, getBookedDates]);
+
   const handleCalculatorInputChange = (field, value) => {
     setCalculatorForm(prev => ({
       ...prev,
@@ -417,6 +441,7 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
                   startDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
                   endDate={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
                   minDate={new Date()}
+                  excludeDateIntervals={activeBookedDates}
                   placeholderText="Select date"
                   className="calc-datepicker"
                 />
@@ -430,6 +455,7 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
                   startDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
                   endDate={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
                   minDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : new Date()}
+                  excludeDateIntervals={activeBookedDates}
                   placeholderText="Select date"
                   className="calc-datepicker"
                 />
@@ -845,10 +871,15 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
     if (property?.id && getBookedDates) {
       const fetchDates = async () => {
         const dates = await getBookedDates(property.id);
-        const formattedDates = dates.map(range => ({
-          start: new Date(range.checkIn),
-          end: new Date(range.checkOut)
-        }));
+        // Parse dates as local midnight to avoid timezone shifts
+        const formattedDates = dates.map(range => {
+          const [sYear, sMonth, sDay] = range.checkIn.split('-').map(Number);
+          const [eYear, eMonth, eDay] = range.checkOut.split('-').map(Number);
+          return {
+            start: new Date(sYear, sMonth - 1, sDay),
+            end: new Date(eYear, eMonth - 1, eDay)
+          };
+        });
         setBookedDates(formattedDates);
       };
       fetchDates();
