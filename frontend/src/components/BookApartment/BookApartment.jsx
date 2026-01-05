@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { startOfDay, endOfDay } from 'date-fns';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import { useProperties } from '../../contexts/PropertiesContext';
 import { getImageUrlWithFallback } from '../../utils/imageUtils';
@@ -179,8 +180,8 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
           const [sYear, sMonth, sDay] = range.checkIn.split('-').map(Number);
           const [eYear, eMonth, eDay] = range.checkOut.split('-').map(Number);
           return {
-            start: new Date(sYear, sMonth - 1, sDay),
-            end: new Date(eYear, eMonth - 1, eDay)
+            start: new Date(sYear, sMonth - 1, sDay, 0, 0, 0),
+            end: new Date(eYear, eMonth - 1, eDay, 23, 59, 59)
           };
         });
         setActiveBookedDates(formattedDates);
@@ -440,7 +441,7 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
                   selectsStart
                   startDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
                   endDate={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
-                  minDate={new Date()}
+                  minDate={startOfDay(new Date())}
                   excludeDateIntervals={activeBookedDates}
                   placeholderText="Select date"
                   className="calc-datepicker"
@@ -454,7 +455,7 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
                   selectsEnd
                   startDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : null}
                   endDate={calculatorForm.checkOut ? new Date(calculatorForm.checkOut) : null}
-                  minDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : new Date()}
+                  minDate={calculatorForm.checkIn ? new Date(calculatorForm.checkIn) : startOfDay(new Date())}
                   excludeDateIntervals={activeBookedDates}
                   placeholderText="Select date"
                   className="calc-datepicker"
@@ -871,13 +872,12 @@ const BookingModal = ({ property, onClose, onSubmit }) => {
     if (property?.id && getBookedDates) {
       const fetchDates = async () => {
         const dates = await getBookedDates(property.id);
-        // Parse dates as local midnight to avoid timezone shifts
         const formattedDates = dates.map(range => {
           const [sYear, sMonth, sDay] = range.checkIn.split('-').map(Number);
           const [eYear, eMonth, eDay] = range.checkOut.split('-').map(Number);
           return {
-            start: new Date(sYear, sMonth - 1, sDay),
-            end: new Date(eYear, eMonth - 1, eDay)
+            start: new Date(sYear, sMonth - 1, sDay, 0, 0, 0),
+            end: new Date(eYear, eMonth - 1, eDay, 23, 59, 59)
           };
         });
         setBookedDates(formattedDates);

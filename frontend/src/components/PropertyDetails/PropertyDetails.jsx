@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { startOfDay, endOfDay } from 'date-fns';
 import { getImageUrlWithFallback } from '../../utils/imageUtils';
 import { properties as localProperties } from '../../data/properties';
 import { useProperties } from '../../contexts/PropertiesContext';
@@ -30,10 +31,10 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
         const formattedDates = dates.map(range => {
           const [sYear, sMonth, sDay] = range.checkIn.split('-').map(Number);
           const [eYear, eMonth, eDay] = range.checkOut.split('-').map(Number);
-          return {
-            start: new Date(sYear, sMonth - 1, sDay),
-            end: new Date(eYear, eMonth - 1, eDay)
-          };
+          // For manual blocks, ensure full day inclusivity by setting start/end times
+          const start = new Date(sYear, sMonth - 1, sDay, 0, 0, 0);
+          const end = new Date(eYear, eMonth - 1, eDay, 23, 59, 59);
+          return { start, end };
         });
         setBookedDates(formattedDates);
       };
@@ -382,10 +383,9 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                     selectsStart
                     startDate={bookingData.checkIn}
                     endDate={bookingData.checkOut}
-                    minDate={new Date()}
+                    minDate={startOfDay(new Date())}
                     excludeDateIntervals={bookedDates}
                     placeholderText="Select date"
-                    className="booking-datepicker"
                   />
                 </div>
                 <div className="date-input-group">
@@ -396,7 +396,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                     selectsEnd
                     startDate={bookingData.checkIn}
                     endDate={bookingData.checkOut}
-                    minDate={bookingData.checkIn || new Date()}
+                    minDate={bookingData.checkIn || startOfDay(new Date())}
                     excludeDateIntervals={bookedDates}
                     placeholderText="Select date"
                     className="booking-datepicker"

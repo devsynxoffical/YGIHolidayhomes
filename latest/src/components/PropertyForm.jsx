@@ -199,12 +199,16 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
             // Filter only manual blocks for editing
             const manualBlocks = data.bookedDates
               .filter(d => d.type === 'manual')
-              .map(d => ({
-                id: Math.random().toString(36).substr(2, 9),
-                startDate: new Date(d.checkIn),
-                endDate: new Date(d.checkOut),
-                note: d.note || ''
-              }));
+              .map(d => {
+                const [sYear, sMonth, sDay] = d.checkIn.split('-').map(Number);
+                const [eYear, eMonth, eDay] = d.checkOut.split('-').map(Number);
+                return {
+                  id: Math.random().toString(36).substr(2, 9),
+                  startDate: new Date(sYear, sMonth - 1, sDay),
+                  endDate: new Date(eYear, eMonth - 1, eDay),
+                  note: d.note || ''
+                };
+              });
             setBlockedDates(manualBlocks);
           }
         } catch (err) {
