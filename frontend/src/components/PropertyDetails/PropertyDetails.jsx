@@ -7,8 +7,10 @@ import { properties as localProperties } from '../../data/properties';
 import { useProperties } from '../../contexts/PropertiesContext';
 import './PropertyDetails.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ygiholidayhomes-production.up.railway.app';
+
 const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
-  const { getBookedDates } = useProperties();
+  const { getBookedDates, refreshProperties } = useProperties();
   const [activeImage, setActiveImage] = useState(0);
   const [showAllAmenities, setShowAllAmenities] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -21,6 +23,16 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
     email: '',
     phone: ''
   });
+
+  // Review form state
+  const [reviewForm, setReviewForm] = useState({
+    name: '',
+    rating: 5,
+    comment: ''
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   // Fetch booked dates on mount
   useEffect(() => {
@@ -121,6 +133,36 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
 
   const displayProperty = getDisplayProperty();
 
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingReview(true);
+    setReviewError('');
+    setReviewSuccess(false);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/properties/${property.id}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewForm)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setReviewSuccess(true);
+        setReviewForm({ name: '', rating: 5, comment: '' });
+        // Refresh properties in context to show the new review and updated rating
+        if (refreshProperties) await refreshProperties();
+      } else {
+        setReviewError(data.error || 'Failed to submit review');
+      }
+    } catch (err) {
+      console.error('Error submitting review:', err);
+      setReviewError('An error occurred. Please try again.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   return (
     <div className="property-details-page">
       {/* Back Button */}
@@ -159,7 +201,7 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               <div key={index} className="side-image-item">
                 <img
                   src={getImageUrlWithFallback(img)}
-                  alt={`View ${index + 1}`}
+                  alt={`View ${index + 1} `}
                   crossOrigin="anonymous"
                   onError={(e) => {
                     // Fallback to placeholder if all attempts fail
@@ -285,10 +327,10 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                   className="map-link-btn"
                 >
                   Open in Google Maps
-                </a>
-              </div>
-            </div>
-          </section>
+                </a >
+              </div >
+            </div >
+          </section >
 
           <hr className="divider" />
 
@@ -310,12 +352,74 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
                       <span className="reviewer-name">{review.name}</span>
                       <span className="review-date">{review.date}</span>
                     </div>
+                    <div className="review-rating-stars">
+                      {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                    </div>
                   </div>
                   <div className="review-body">
                     {review.comment}
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Leave a Review Form */}
+            <div className="leave-review-section">
+              <h3>Leave a Review</h3>
+              {reviewSuccess ? (
+                <div className="review-success-message">
+                  Thank you! Your review has been submitted successfully.
+                </div>
+              ) : (
+                <form className="review-form" onSubmit={handleReviewSubmit}>
+                  {reviewError && <div className="review-error-message">{reviewError}</div>}
+                  <div className="form-group-row">
+                    <div className="form-group">
+                      <label htmlFor="reviewer-name">Name</label>
+                      <input
+                        id="reviewer-name"
+                        type="text"
+                        value={reviewForm.name}
+                        onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                        placeholder="Your Name"
+                        required
+                        disabled={submittingReview}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="reviewer-rating">Rating</label>
+                      <select
+                        id="reviewer-rating"
+                        value={reviewForm.rating}
+                        onChange={(e) => setReviewForm({ ...reviewForm, rating: parseInt(e.target.value) })}
+                        required
+                        disabled={submittingReview}
+                      >
+                        <option value="5">5 Stars - Excellent</option>
+                        <option value="4">4 Stars - Very Good</option>
+                        <option value="3">3 Stars - Good</option>
+                        <option value="2">2 Stars - Fair</option>
+                        <option value="1">1 Star - Poor</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="reviewer-comment">Comment</label>
+                    <textarea
+                      id="reviewer-comment"
+                      value={reviewForm.comment}
+                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                      placeholder="Share your experience..."
+                      required
+                      rows="4"
+                      disabled={submittingReview}
+                    ></textarea>
+                  </div>
+                  <button type="submit" className="submit-review-btn" disabled={submittingReview}>
+                    {submittingReview ? 'Submitting...' : 'Post Review'}
+                  </button>
+                </form>
+              )}
             </div>
           </section>
 
@@ -347,10 +451,10 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               </div>
             )}
           </section>
-        </div>
+        </div >
 
         {/* Sidebar - Booking Widget */}
-        <div className="property-sidebar">
+        < div className="property-sidebar" >
           <div className="booking-widget-card">
             <div className="widget-header">
               <div className="price-display">
@@ -499,9 +603,9 @@ const PropertyDetails = ({ property, onNavigate, onBookNow }) => {
               );
             })()}
           </div>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 };
 

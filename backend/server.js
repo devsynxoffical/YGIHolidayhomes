@@ -1519,6 +1519,50 @@ app.put('/api/admin/properties/:id/blocked-dates', authenticateAdmin, async (req
   }
 });
 
+// Add Review to Property (Public)
+app.post('/api/properties/:id/reviews', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, rating, comment } = req.body;
+
+    if (!name || !rating || !comment) {
+      return res.status(400).json({ success: false, error: 'Name, rating, and comment are required' });
+    }
+
+    const data = await fs.readFile(PROPERTIES_FILE, 'utf8');
+    const properties = JSON.parse(data);
+    const index = properties.findIndex(p => p.id === parseInt(id));
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Property not found' });
+    }
+
+    const property = properties[index];
+    if (!property.reviews) property.reviews = [];
+
+    const newReview = {
+      id: property.reviews.length > 0 ? Math.max(...property.reviews.map(r => r.id)) + 1 : 1,
+      name,
+      rating: parseFloat(rating),
+      comment,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    property.reviews.push(newReview);
+
+    // Recalculate average rating
+    const totalRating = property.reviews.reduce((sum, r) => sum + r.rating, 0);
+    property.rating = parseFloat((totalRating / property.reviews.length).toFixed(1));
+
+    await fs.writeFile(PROPERTIES_FILE, JSON.stringify(properties, null, 2));
+
+    res.json({ success: true, review: newReview, propertyRating: property.rating });
+  } catch (error) {
+    console.error('Error adding review:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 // Delete property
 app.delete('/api/admin/properties/:id', authenticateAdmin, async (req, res) => {
   try {

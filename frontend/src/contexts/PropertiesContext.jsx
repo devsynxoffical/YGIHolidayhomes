@@ -11,63 +11,63 @@ export const PropertiesProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        // Add cache-busting timestamp to ensure fresh data
-        const timestamp = new Date().getTime();
-        const url = `${API_BASE_URL}/api/properties?_t=${timestamp}`;
-        console.log(`🔄 Fetching properties from: ${url}`);
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      // Add cache-busting timestamp to ensure fresh data
+      const timestamp = new Date().getTime();
+      const url = `${API_BASE_URL}/api/properties?_t=${timestamp}`;
+      console.log(`🔄 Fetching properties from: ${url}`);
 
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          },
-        });
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+      });
 
-        console.log('API Response status:', response.status, response.statusText);
+      console.log('API Response status:', response.status, response.statusText);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error Response:', errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('API Response data:', data);
-
-        if (data.success && data.properties && data.properties.length > 0) {
-          setProperties(data.properties);
-          setError(null);
-          console.log(`✅ Loaded ${data.properties.length} properties from API (live data)`);
-        } else if (data.properties && Array.isArray(data.properties)) {
-          // Even if empty, use the API response (empty array)
-          setProperties(data.properties);
-          setError(null);
-          console.log(`✅ Loaded ${data.properties.length} properties from API (empty but live)`);
-        } else {
-          // Invalid response format
-          throw new Error('Invalid response format from API');
-        }
-      } catch (err) {
-        console.error('❌ Failed to fetch properties from API:', err);
-        console.error('Error details:', {
-          message: err.message,
-          stack: err.stack,
-          apiUrl: `${API_BASE_URL}/api/properties`
-        });
-        // Don't use fallback - show error instead
-        setProperties([]);
-        setError(`Failed to load properties: ${err.message}. Please refresh the page.`);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    };
 
+      const data = await response.json();
+      console.log('API Response data:', data);
+
+      if (data.success && data.properties && data.properties.length > 0) {
+        setProperties(data.properties);
+        setError(null);
+        console.log(`✅ Loaded ${data.properties.length} properties from API (live data)`);
+      } else if (data.properties && Array.isArray(data.properties)) {
+        // Even if empty, use the API response (empty array)
+        setProperties(data.properties);
+        setError(null);
+        console.log(`✅ Loaded ${data.properties.length} properties from API (empty but live)`);
+      } else {
+        // Invalid response format
+        throw new Error('Invalid response format from API');
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch properties from API:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        apiUrl: `${API_BASE_URL}/api/properties`
+      });
+      // Don't use fallback - show error instead
+      setProperties([]);
+      setError(`Failed to load properties: ${err.message}. Please refresh the page.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProperties();
 
     // Refresh properties every 5 minutes to ensure fresh data
@@ -88,7 +88,7 @@ export const PropertiesProvider = ({ children }) => {
   };
 
   return (
-    <PropertiesContext.Provider value={{ properties, loading, error, getBookedDates }}>
+    <PropertiesContext.Provider value={{ properties, loading, error, getBookedDates, refreshProperties: fetchProperties }}>
       {children}
     </PropertiesContext.Provider>
   );

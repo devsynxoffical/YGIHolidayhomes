@@ -40,7 +40,8 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
     otherNotes: '',
     excludeDiscount: false,
     excludeCleaningFee: false,
-    discountPercentage: 0
+    discountPercentage: 0,
+    reviews: []
   });
 
   const [blockedDates, setBlockedDates] = useState([]);
@@ -60,6 +61,13 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
   const [uploadProgress, setUploadProgress] = useState({});
   const [selectedImageCategory, setSelectedImageCategory] = useState('Living Room');
   const [imageFallbacks, setImageFallbacks] = useState({}); // Store fallback URLs for each image
+
+  const [newReview, setNewReview] = useState({
+    name: '',
+    rating: 5,
+    comment: '',
+    date: new Date().toISOString().split('T')[0]
+  });
 
   // Image categories matching the frontend PropertyPhotos component
   const imageCategories = [
@@ -187,7 +195,8 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         otherNotes: property.otherNotes || '',
         excludeDiscount: property.excludeDiscount || false,
         excludeCleaningFee: property.excludeCleaningFee || false,
-        discountPercentage: property.discountPercentage || 0
+        discountPercentage: property.discountPercentage || 0,
+        reviews: property.reviews || []
       });
 
       // Fetch blocked dates
@@ -247,7 +256,8 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
         otherNotes: '',
         excludeDiscount: false,
         excludeCleaningFee: false,
-        discountPercentage: 0
+        discountPercentage: 0,
+        reviews: []
       });
     }
   }, [property, apiBaseUrl]);
@@ -1005,6 +1015,125 @@ function PropertyForm({ apiBaseUrl, token, property, onCancel, onSuccess }) {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Reviews Management */}
+        <section className="form-section">
+          <h2>Reviews Management</h2>
+          <p className="section-hint">Manage the reviews displayed for this property. You can manually add reviews or remove existing ones.</p>
+
+          <div className="admin-reviews-manager">
+            <div className="add-review-admin">
+              <h3>Add New Review</h3>
+              <div className="review-inputs-grid">
+                <div className="form-group">
+                  <label>Reviewer Name</label>
+                  <input
+                    type="text"
+                    value={newReview.name}
+                    onChange={(e) => setNewReview(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Guest Name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Rating</label>
+                  <select
+                    value={newReview.rating}
+                    onChange={(e) => setNewReview(prev => ({ ...prev, rating: parseInt(e.target.value) }))}
+                  >
+                    {[5, 4, 3, 2, 1].map(num => (
+                      <option key={num} value={num}>{num} Stars</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Date</label>
+                  <input
+                    type="date"
+                    value={newReview.date}
+                    onChange={(e) => setNewReview(prev => ({ ...prev, date: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label>Comment</label>
+                  <textarea
+                    value={newReview.comment}
+                    onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
+                    placeholder="Review comment..."
+                    rows="3"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="add-review-btn"
+                  onClick={() => {
+                    if (!newReview.name || !newReview.comment) {
+                      showNotification('Please fill in name and comment', 'error');
+                      return;
+                    }
+                    const reviewToAdd = {
+                      ...newReview,
+                      id: formData.reviews.length > 0 ? Math.max(...formData.reviews.map(r => r.id)) + 1 : 1,
+                      rating: Number(newReview.rating)
+                    };
+                    setFormData(prev => ({
+                      ...prev,
+                      reviews: [...prev.reviews, reviewToAdd]
+                    }));
+                    setNewReview({
+                      name: '',
+                      rating: 5,
+                      comment: '',
+                      date: new Date().toISOString().split('T')[0]
+                    });
+                    showNotification('Review added to list', 'success');
+                  }}
+                >
+                  Add Review to Property
+                </button>
+              </div>
+            </div>
+
+            <div className="admin-reviews-list">
+              <h3>Existing Reviews ({formData.reviews.length})</h3>
+              {formData.reviews.length === 0 ? (
+                <p className="no-ranges">No reviews for this property yet.</p>
+              ) : (
+                <div className="reviews-admin-grid">
+                  {[...formData.reviews].reverse().map((review, idx) => {
+                    const originalIndex = formData.reviews.length - 1 - idx;
+                    return (
+                      <div key={review.id || idx} className="admin-review-card">
+                        <div className="admin-review-content">
+                          <div className="admin-review-header">
+                            <span className="admin-reviewer-name">{review.name}</span>
+                            <span className="admin-review-rating">{'★'.repeat(review.rating)}</span>
+                            <span className="admin-review-date">{review.date}</span>
+                          </div>
+                          <p className="admin-review-body">{review.comment}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="remove-review-btn"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this review?')) {
+                              setFormData(prev => ({
+                                ...prev,
+                                reviews: prev.reviews.filter((_, i) => i !== originalIndex)
+                              }));
+                            }
+                          }}
+                          title="Delete Review"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
