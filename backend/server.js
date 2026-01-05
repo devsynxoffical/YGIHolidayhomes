@@ -383,10 +383,7 @@ const authenticateAdmin = (req, res, next) => {
   next();
 };
 
-// Properties file path
-const PROPERTIES_FILE = path.join(__dirname, 'data', 'properties.json');
-// Bookings file path
-const BOOKINGS_FILE = path.join(__dirname, 'data', 'bookings.json');
+// Ensured these are declared at the top of the file to prevent SyntaxError
 
 // Ensure data directory exists
 const ensureDataDirectory = async () => {
