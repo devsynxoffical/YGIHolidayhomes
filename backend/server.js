@@ -51,7 +51,27 @@ const PROPERTIES_FILE = path.join(__dirname, 'data', 'properties.json');
 // Middleware
 // Middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://*.googletagmanager.com", "https://js.stripe.com", "https://*.google-analytics.com", "https://*.analytics.google.com"],
+      connectSrc: [
+        "'self'",
+        "https://*.google-analytics.com",
+        "https://*.analytics.google.com",
+        "https://*.googletagmanager.com",
+        "https://stats.g.doubleclick.net",
+        "https://api.stripe.com",
+        "https://script.google.com",
+        "https://script.googleusercontent.com"
+      ],
+      imgSrc: ["'self'", "data:", "blob:", "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.stripe.com"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    },
+  },
 }));
 app.use(morgan('combined'));
 // Define allowed origins
