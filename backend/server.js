@@ -536,12 +536,6 @@ app.get('/api/images/:imageId/metadata', async (req, res) => {
 
 // Handle OPTIONS preflight for image endpoint
 app.options('/api/images/:imageId', (req, res) => {
-  res.set({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400' // 24 hours
-  });
   res.sendStatus(204);
 });
 
@@ -551,11 +545,6 @@ app.get('/api/images/:imageId', async (req, res) => {
     const bucket = await getBucket();
 
     // Set CORS headers before any response
-    res.set({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
 
     let imageId;
     try {
@@ -563,9 +552,6 @@ app.get('/api/images/:imageId', async (req, res) => {
     } catch (error) {
       // Return 400 with CORS headers
       res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
       });
       return res.status(400).json({ error: 'Invalid image ID format' });
@@ -576,9 +562,6 @@ app.get('/api/images/:imageId', async (req, res) => {
     if (files.length === 0) {
       // Return 404 with CORS headers
       res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
       });
       return res.status(404).json({ error: 'Image not found' });
@@ -590,10 +573,7 @@ app.get('/api/images/:imageId', async (req, res) => {
     res.set({
       'Content-Type': file.metadata?.mimeType || 'image/jpeg',
       'Content-Length': file.length,
-      'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Cache-Control': 'public, max-age=31536000' // Cache for 1 year
     });
 
     // Stream the image
@@ -603,22 +583,12 @@ app.get('/api/images/:imageId', async (req, res) => {
     downloadStream.on('error', (error) => {
       console.error('Error streaming image:', error);
       if (!res.headersSent) {
-        res.set({
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        });
         res.status(500).json({ error: 'Failed to retrieve image' });
       }
     });
   } catch (error) {
     console.error('Error retrieving image:', error);
     if (!res.headersSent) {
-      res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      });
       res.status(500).json({ error: 'Failed to retrieve image' });
     }
   }
@@ -631,11 +601,6 @@ app.get('/api/images/filename/:filename', async (req, res) => {
     let filename = decodeURIComponent(req.params.filename);
 
     // Set CORS headers before any response
-    res.set({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
 
     // Try multiple filename variations
     const filenameVariations = [
@@ -681,9 +646,6 @@ app.get('/api/images/filename/:filename', async (req, res) => {
       console.log(`❌ Image not found. Tried variations:`, filenameVariations.slice(0, 3));
       // Return 404 with CORS headers explicitly set
       res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
       });
       return res.status(404).json({
@@ -695,10 +657,7 @@ app.get('/api/images/filename/:filename', async (req, res) => {
     res.set({
       'Content-Type': file.metadata?.mimeType || 'image/jpeg',
       'Content-Length': file.length,
-      'Cache-Control': 'public, max-age=31536000',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Cache-Control': 'public, max-age=31536000'
     });
 
     const downloadStream = bucket.openDownloadStream(file._id);
@@ -707,22 +666,12 @@ app.get('/api/images/filename/:filename', async (req, res) => {
     downloadStream.on('error', (error) => {
       console.error('Error streaming image:', error);
       if (!res.headersSent) {
-        res.set({
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        });
         res.status(500).json({ error: 'Failed to retrieve image' });
       }
     });
   } catch (error) {
     console.error('Error retrieving image by filename:', error);
     if (!res.headersSent) {
-      res.set({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      });
       res.status(500).json({ error: 'Failed to retrieve image' });
     }
   }
