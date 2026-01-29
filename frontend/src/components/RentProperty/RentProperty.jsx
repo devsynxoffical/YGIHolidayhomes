@@ -30,7 +30,7 @@ const RentProperty = ({ onNavigate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Prepare booking data for Google Sheets
       const bookingData = {
@@ -53,7 +53,7 @@ const RentProperty = ({ onNavigate }) => {
 
       // Submit to Google Sheets
       const result = await submitBookingToGoogleSheets(bookingData);
-      
+
       if (result.success) {
         // Set inquiry result and show success modal
         setInquiryResult({
@@ -62,7 +62,7 @@ const RentProperty = ({ onNavigate }) => {
           totalPrice: 0
         });
         setShowSuccessModal(true);
-        
+
         // Reset form
         setFormData({
           fullName: '',
@@ -100,7 +100,7 @@ const RentProperty = ({ onNavigate }) => {
                 <span className="title-main">Earn More From Your Dubai Property</span>
                 <span className="title-sub">With Our Expert Management</span>
               </h1>
-              
+
               <div className="hero-stats">
                 <div className="stat-item">
                   <div className="stat-number">25%</div>
@@ -115,9 +115,9 @@ const RentProperty = ({ onNavigate }) => {
                   <div className="stat-label">Support</div>
                 </div>
               </div>
-              
+
               <div className="hero-ctas-new">
-                <button 
+                <button
                   className="btn btn-primary-new"
                   onClick={() => onNavigate('contact')}
                 >
@@ -125,7 +125,7 @@ const RentProperty = ({ onNavigate }) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="hero-right">
               <div className="hero-visual-container">
                 <div className="main-property-card">
@@ -264,6 +264,7 @@ const RentProperty = ({ onNavigate }) => {
           <p className="why-rent-intro">
             Renting your property in Dubai can be overwhelming without expert guidance. YGI Holiday Homes provides full-service management, ensuring your rental property in Dubai operates at its highest potential.
           </p>
+          <h3 className="why-rent-subtitle">Key Benefits of Partnering With Us</h3>
           <div className="why-rent-grid">
             <div className="why-rent-item">
               <h4>Interior styling and décor improvements increase occupancy and revenue</h4>
@@ -358,8 +359,8 @@ const RentProperty = ({ onNavigate }) => {
             </div>
             <div className="testimonial-card">
               <div className="testimonial-image">
-                <img 
-                  src="/Images/66deceb807bb4e3770db189e_RHONJ_S5E13_The Miraval Resort and Spa_1.avif" 
+                <img
+                  src="/Images/66deceb807bb4e3770db189e_RHONJ_S5E13_The Miraval Resort and Spa_1.avif"
                   alt="Luxury hotel interior"
                   onError={(e) => {
                     e.target.onerror = null;
@@ -400,42 +401,7 @@ const RentProperty = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* FAQs Section */}
-      <section className="faqs-rent-section">
-        <div className="container">
-          <h2>Frequently Asked Questions</h2>
-          <div className="faqs-list">
-            <div className="faq-item">
-              <h3>1. How do I start renting my property in Dubai with YGI Holiday Homes?</h3>
-              <p>Provide your property details, and our team will guide you through furnishing, listing, tenant sourcing, and full management. Your rental property in Dubai will be optimized for maximum income.</p>
-            </div>
-            <div className="faq-item">
-              <h3>2. Can I list an unfurnished apartment?</h3>
-              <p>Yes, we furnish and style your property to attract premium tenants and achieve high occupancy.</p>
-            </div>
-            <div className="faq-item">
-              <h3>3. How do you find tenants for my rental property in Dubai?</h3>
-              <p>We use online platforms, corporate partnerships, and direct marketing to secure high-quality tenants and maximize bookings.</p>
-            </div>
-            <div className="faq-item">
-              <h3>4. Which model is better, revenue sharing or traditional lease?</h3>
-              <p>Revenue sharing maximizes income, while traditional lease provides predictable, stable income. We guide you in choosing the best model for your property.</p>
-            </div>
-            <div className="faq-item">
-              <h3>5. Do you handle maintenance and guest communication?</h3>
-              <p>Yes, we manage repairs, cleaning, check-ins, and all tenant communication, giving you a hassle-free rental property in Dubai experience.</p>
-            </div>
-            <div className="faq-item">
-              <h3>6. Can I rent multiple properties with you?</h3>
-              <p>Absolutely, our team can manage multiple Dubai rental properties efficiently and profitably.</p>
-            </div>
-            <div className="faq-item">
-              <h3>7. Is my property eligible for listing?</h3>
-              <p>Properties in prime locations and well-maintained units are preferred. Our team will assess your property and provide recommendations for optimization.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Lead Capture Form */}
       <section className="lead-capture">
@@ -467,7 +433,7 @@ const RentProperty = ({ onNavigate }) => {
                   />
                 </div>
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="phone">Phone/WhatsApp *</label>
@@ -581,6 +547,43 @@ const RentProperty = ({ onNavigate }) => {
               <button type="submit" className="btn btn-primary">Check Eligibility</button>
             </form>
             <p className="form-note">Response within 12–24 hours.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQs Section */}
+      <section className="faqs-rent-section">
+        <div className="container">
+          <h2>Frequently Asked Questions</h2>
+          <div className="faqs-list">
+            <div className="faq-item">
+              <h3>1. How do I start renting my property in Dubai with YGI Holiday Homes?</h3>
+              <p>Provide your property details, and our team will guide you through furnishing, listing, tenant sourcing, and full management. Your rental property in Dubai will be optimized for maximum income.</p>
+            </div>
+            <div className="faq-item">
+              <h3>2. Can I list an unfurnished apartment?</h3>
+              <p>Yes, we furnish and style your property to attract premium tenants and achieve high occupancy.</p>
+            </div>
+            <div className="faq-item">
+              <h3>3. How do you find tenants for my rental property in Dubai?</h3>
+              <p>We use online platforms, corporate partnerships, and direct marketing to secure high-quality tenants and maximize bookings.</p>
+            </div>
+            <div className="faq-item">
+              <h3>4. Which model is better, revenue sharing or traditional lease?</h3>
+              <p>Revenue sharing maximizes income, while traditional lease provides predictable, stable income. We guide you in choosing the best model for your property.</p>
+            </div>
+            <div className="faq-item">
+              <h3>5. Do you handle maintenance and guest communication?</h3>
+              <p>Yes, we manage repairs, cleaning, check-ins, and all tenant communication, giving you a hassle-free rental property in Dubai experience.</p>
+            </div>
+            <div className="faq-item">
+              <h3>6. Can I rent multiple properties with you?</h3>
+              <p>Absolutely, our team can manage multiple Dubai rental properties efficiently and profitably.</p>
+            </div>
+            <div className="faq-item">
+              <h3>7. Is my property eligible for listing?</h3>
+              <p>Properties in prime locations and well-maintained units are preferred. Our team will assess your property and provide recommendations for optimization.</p>
+            </div>
           </div>
         </div>
       </section>

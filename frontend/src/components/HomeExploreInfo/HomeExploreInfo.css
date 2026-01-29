@@ -1,0 +1,90 @@
+.home-explore-info .section {
+    padding: 5rem 0;
+    background-color: #fff;
+}
+
+.home-explore-info h2 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 2.5rem;
+    font-weight: 700;
+}
+
+.home-explore-info .content-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.home-explore-info p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #4a4a4a;
+    margin-bottom: 1.5rem;
+}
+
+.home-explore-info .primary-text {
+    font-weight: 500;
+    color: #2c2c2c;
+}
+
+.home-explore-info .button-wrapper {
+    margin-top: 2.5rem;
+}
+
+/* Flexible Rentals Section specific */
+.flexible-rentals-home {
+    background-color: #f9fdfb !important;
+    /* Very light green background */
+}
+
+.home-explore-info .benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    text-align: left;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.home-explore-info .benefits-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.home-explore-info .check-icon {
+    color: #0FA968;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.home-explore-info .closing-text {
+    margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+    .home-explore-info .section {
+        padding: 3rem 0;
+    }
+
+    .home-explore-info h2 {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .home-explore-info p {
+        font-size: 1rem;
+    }
+
+    .home-explore-info .benefits-list li {
+        font-size: 1rem;
+    }
+}

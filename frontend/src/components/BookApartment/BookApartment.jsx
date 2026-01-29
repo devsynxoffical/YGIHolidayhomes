@@ -397,7 +397,10 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
         <div className="container">
           <h2>Explore Luxury Apartments for Rent in Dubai</h2>
           <p>
-            Our apartments are designed to provide the perfect combination of style, comfort, and convenience. Whether you are looking for a modern apartment for rent in Dubai Marina, a cozy apartment in Jumeirah, or a high-rise penthouse in Downtown Dubai, we have options that meet your expectations.
+            Welcome to YGI Holiday Homes, where finding the perfect apartment for rent in Dubai is simple, fast, and tailored to your needs. Whether you are planning a family vacation, a business trip, or a romantic getaway, we provide a curated selection of fully furnished apartments across Dubai’s most sought-after locations. Our goal is to make your experience seamless, enjoyable, and memorable.
+          </p>
+          <p>
+            By choosing to book your apartments in Dubai with us, you gain access to premium properties, professional services, and a hassle-free booking process. From waterfront apartments in Dubai Marina to luxury penthouses near Downtown Dubai, we cater to all types of travelers.
           </p>
         </div>
       </section>
@@ -523,10 +526,17 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
         </div>
       )}
 
+
       {/* Properties Grid */}
       <div className="properties-section">
         <div className="container">
-          <h2 className="properties-heading">{searchResults ? 'Available Properties' : 'Book an Apartment'}</h2>
+          <div className="featured-intro">
+            <h2>Explore Luxury Apartments for Rent in Dubai</h2>
+            <p>
+              Our apartments are designed to provide the perfect combination of style, comfort, and convenience. Whether you are looking for a modern apartment for rent in Dubai Marina, a cozy apartment in Jumeirah, or a high-rise penthouse in Downtown Dubai, we have options that meet your expectations.
+            </p>
+          </div>
+          <h2 className="properties-heading">{searchResults ? 'Available Properties' : 'Featured Apartments Include:'}</h2>
           {loading ? (
             <div className="loading-state">
               <div className="skeleton-grid">
@@ -621,6 +631,172 @@ const BookApartment = ({ onNavigate, onViewDetails, onBookNow, searchParams }) =
           )}
         </div>
       </div>
+
+      {/* Why Choose Section (Moved here) */}
+      <section className="book-why-choose">
+        <div className="container">
+          <h2>Why Choose YGI Holiday Homes to Book Your Apartment in Dubai</h2>
+          <p className="why-choose-intro">
+            Dubai is a dynamic city with diverse neighborhoods, each offering unique experiences. Selecting the right apartment can be overwhelming. YGI Holiday Homes makes it simple by offering:
+          </p>
+          <div className="why-choose-grid-book">
+            <div className="why-choose-item-book">
+              <h3>Wide Range of Properties</h3>
+              <p>From modern 1-bedroom flats to spacious 4-bedroom apartments, we have options for every budget and requirement.</p>
+            </div>
+            <div className="why-choose-item-book">
+              <h3>Prime Locations</h3>
+              <p>Enjoy easy access to landmarks, shopping destinations, beaches, and business hubs while staying in our carefully selected apartment for rent in Dubai.</p>
+            </div>
+            <div className="why-choose-item-book">
+              <h3>Seamless Booking Process</h3>
+              <p>Our advanced tool allows you to book your apartments in Dubai, check availability, and secure your stay instantly.</p>
+            </div>
+            <div className="why-choose-item-book">
+              <h3>Verified Apartments</h3>
+              <p>Every listing is verified, fully furnished, and maintained to the highest standards.</p>
+            </div>
+          </div>
+          <p className="why-choose-footer-book">
+            When you book your apartments in Dubai with YGI Holiday Homes, you can rest assured that your stay will be comfortable, safe, and enjoyable.
+          </p>
+        </div>
+      </section>
+
+      {/* How to Book Section */}
+      <section className="book-how-to-section">
+        <div className="container">
+          <h2>How to Book Your Apartments in Dubai</h2>
+          <p className="section-intro-centered">Booking your ideal apartment is simple with our user-friendly platform. Follow these easy steps to reserve your stay:</p>
+          <div className="booking-steps">
+            <div className="booking-step">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <h3>Select Your Destination and Dates</h3>
+                <p>Choose your preferred area in Dubai and input your check-in and check-out dates.</p>
+              </div>
+            </div>
+            <div className="booking-step">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <h3>Filter Your Preferences</h3>
+                <p>Use our filters to select the number of bedrooms, amenities, and other key requirements.</p>
+              </div>
+            </div>
+            <div className="booking-step">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <h3>Browse Verified Listings</h3>
+                <p>Explore detailed property descriptions, high-quality photos, and guest reviews for each apartment for rent in Dubai.</p>
+              </div>
+            </div>
+            <div className="booking-step">
+              <div className="step-number">4</div>
+              <div className="step-content">
+                <h3>Secure Your Booking</h3>
+                <p>Complete the booking process online and receive instant confirmation.</p>
+              </div>
+            </div>
+          </div>
+          <p className="section-note">By following these steps, you can book your apartments in Dubai confidently and enjoy a hassle-free experience.</p>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="book-benefits-section">
+        <div className="container">
+          <h2>Benefits of Booking an Apartment for Rent in Dubai</h2>
+          <div className="benefits-grid-book">
+            <div className="benefit-item-book">
+              <h3>More Space and Privacy</h3>
+              <p>Ideal for families, groups, or long-term stays.</p>
+            </div>
+            <div className="benefit-item-book">
+              <h3>Flexible Amenities</h3>
+              <p>Fully equipped kitchens, living areas, and private balconies enhance comfort.</p>
+            </div>
+            <div className="benefit-item-book">
+              <h3>Cost-Effective</h3>
+              <p>Apartments often offer better value for extended stays compared to hotels.</p>
+            </div>
+            <div className="benefit-item-book">
+              <h3>Local Experience</h3>
+              <p>Live like a resident and enjoy the authentic Dubai lifestyle.</p>
+            </div>
+          </div>
+          <p className="section-note">With YGI Holiday Homes, you can easily book your apartments in Dubai that combine luxury, comfort, and affordability.</p>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="book-about-section">
+        <div className="container">
+          <h2>About Us</h2>
+          <p>YGI Holiday Homes is a premier property management and rental service specializing in Dubai. Our mission is to provide travelers with exceptional apartments for rent in Dubai while ensuring owners receive professional management.</p>
+          <p>We have extensive experience in managing high-quality apartments for rent in Dubai and helping guests book your apartments in Dubai easily. Our team handles every detail from property verification and maintenance to guest support and bookings.</p>
+          <p>Whether you are a first-time visitor or a frequent traveler, YGI Holiday Homes ensures your stay in Dubai is seamless, safe, and enjoyable.</p>
+        </div>
+      </section>
+
+      {/* Why Book Section */}
+      <section className="book-why-book-section">
+        <div className="container">
+          <h2>Why Book Your Apartments in Dubai With YGI Holiday Homes</h2>
+          <div className="why-book-grid-book">
+            <div className="why-book-item-book">
+              <h3>Verified Properties</h3>
+              <p>Every listing is inspected for safety, cleanliness, and comfort.</p>
+            </div>
+            <div className="why-book-item-book">
+              <h3>Prime Locations</h3>
+              <p>Stay near beaches, malls, business hubs, and tourist attractions.</p>
+            </div>
+            <div className="why-book-item-book">
+              <h3>Flexible Booking Options</h3>
+              <p>Short-term and long-term stays available.</p>
+            </div>
+            <div className="why-book-item-book">
+              <h3>24/7 Customer Support</h3>
+              <p>Our team is always available to assist you during your stay.</p>
+            </div>
+            <div className="why-book-item-book">
+              <h3>Transparent Pricing</h3>
+              <p>No hidden fees or surprises at check-in.</p>
+            </div>
+          </div>
+          <p className="section-note">Booking with us means you can book your apartments in Dubai without worrying about quality, location, or service.</p>
+        </div>
+      </section>
+
+      {/* Tips Section */}
+      <section className="book-tips-section">
+        <div className="container">
+          <h2>Tips for Choosing the Perfect Apartment in Dubai</h2>
+          <div className="tips-grid-book">
+            <div className="tip-item-book">
+              <h3>Location</h3>
+              <p>Choose an area close to your places of interest, like Dubai Marina, Downtown, or Palm Jumeirah.</p>
+            </div>
+            <div className="tip-item-book">
+              <h3>Amenities</h3>
+              <p>Check if the apartment has pools, gyms, parking, or direct beach access.</p>
+            </div>
+            <div className="tip-item-book">
+              <h3>Size</h3>
+              <p>Ensure the apartment suits the number of guests in your party.</p>
+            </div>
+            <div className="tip-item-book">
+              <h3>Reviews</h3>
+              <p>Previous guest reviews provide insight into the property and management quality.</p>
+            </div>
+            <div className="tip-item-book">
+              <h3>Budget</h3>
+              <p>Compare prices across different neighborhoods to find value for your stay.</p>
+            </div>
+          </div>
+          <p className="section-note">These tips help travelers to book their apartments in Dubai that meet their exact needs and preferences.</p>
+        </div>
+      </section>
 
       {/* FAQs Section */}
       <section className="book-faqs-section">

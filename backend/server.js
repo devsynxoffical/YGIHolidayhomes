@@ -67,7 +67,7 @@ app.use(helmet({
         "https://script.googleusercontent.com"
       ],
       imgSrc: ["'self'", "data:", "blob:", "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.stripe.com"],
-      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com", "https://www.googletagmanager.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     },

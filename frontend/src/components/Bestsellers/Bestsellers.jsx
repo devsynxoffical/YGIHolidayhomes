@@ -34,7 +34,7 @@ const Bestsellers = ({ onNavigate }) => {
       <div className="container">
         <div className="bestsellers-header">
           <div className="bestsellers-title-row">
-            <h2 className="bestsellers-title">PROPERTIES</h2>
+            <h2 className="bestsellers-title">Featured Properties</h2>
             <div className="bestsellers-controls">
               <div className="sort-controls">
                 <label>Sort By</label>
@@ -85,6 +85,9 @@ const Bestsellers = ({ onNavigate }) => {
 
         {/* Explore More Button */}
         <div className="explore-more-section">
+          <p className="management-text">
+            All our properties are professionally managed by YGI Holiday Homes, providing a smooth, stress-free experience for guests.
+          </p>
           <button
             className="explore-more-btn"
             onClick={() => onNavigate('book')}

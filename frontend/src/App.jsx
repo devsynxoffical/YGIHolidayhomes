@@ -25,6 +25,7 @@ import WhyChooseYGI from './components/WhyChooseYGI/WhyChooseYGI';
 import HomeFAQs from './components/HomeFAQs/HomeFAQs';
 import DubaiCommunities from './components/DubaiCommunities/DubaiCommunities';
 import HomeCTA from './components/HomeCTA/HomeCTA';
+import HomeExploreInfo from './components/HomeExploreInfo/HomeExploreInfo';
 import {
   getPageFromSlug,
   getSlugFromPage,
@@ -183,9 +184,11 @@ function App() {
             <SearchFilter onNavigate={handleNavigate} />
             <Bestsellers onNavigate={handleNavigate} />
             <DubaiCommunities onNavigate={handleNavigate} />
+            <HomeExploreInfo onNavigate={handleNavigate} />
             <WhyChooseYGI />
             <Testimonials />
             <HomeFAQs />
+            <HomeCTA onNavigate={handleNavigate} />
           </>
         );
     }
